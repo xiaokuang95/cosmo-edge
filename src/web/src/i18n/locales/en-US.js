@@ -1141,6 +1141,11 @@ export default {
   },
   systemManage: {
     apiKeyManage: 'apiKey Management',
+    osdSettings: 'OSD Settings',
+    osdEnterLabel: 'Enter Label',
+    osdLeaveLabel: 'Leave Label',
+    osdPosX: 'Horizontal Position',
+    osdPosY: 'Vertical Position',
     apiKeyDesc: 'Third-party snapshot / channel API key',
     apiKeyEmpty: 'Not generated',
     copyApiKey: 'Copy',

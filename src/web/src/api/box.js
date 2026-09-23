@@ -208,6 +208,22 @@ const system = {
       data,
     })
   },
+  // 人流OSD外观 查询
+  boxQueryOsdConfig(data) {
+    return request({
+      url: '/gtw/cwai/System/QueryOsdConfig',
+      method: 'post',
+      data,
+    })
+  },
+  // 人流OSD外观 设置
+  boxSetOsdConfig(data) {
+    return request({
+      url: '/gtw/cwai/System/SetOsdConfig',
+      method: 'post',
+      data,
+    })
+  },
   // 修改密码
   boxModifyPassword(data) {
     return request({

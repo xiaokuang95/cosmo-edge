@@ -38,6 +38,29 @@
           </div>
         </div>
       </el-tab-pane>
+      <el-tab-pane :label="t('systemManage.osdSettings')" name="osd">
+        <div class="osd-setting" v-if="activeName === 'osd'">
+          <div class="osd-setting-form">
+            <el-form :label-width="currentLocale === 'en-US' ? '170px' : '120px'">
+              <el-form-item :label="t('systemManage.osdEnterLabel')">
+                <el-input v-model="osdConfig.enterLabel" size="small" style="width: 200px" maxlength="16" />
+              </el-form-item>
+              <el-form-item :label="t('systemManage.osdLeaveLabel')">
+                <el-input v-model="osdConfig.leaveLabel" size="small" style="width: 200px" maxlength="16" />
+              </el-form-item>
+              <el-form-item :label="t('systemManage.osdPosX')">
+                <el-slider v-model="osdConfig.xRatio" :min="0" :max="1" :step="0.05" style="width: 200px; margin-right: 12px" />
+              </el-form-item>
+              <el-form-item :label="t('systemManage.osdPosY')">
+                <el-slider v-model="osdConfig.yRatio" :min="0" :max="1" :step="0.05" style="width: 200px; margin-right: 12px" />
+              </el-form-item>
+            </el-form>
+          </div>
+          <div class="osd-setting-tools">
+            <el-button type="primary" size="small" @click="handleSaveOsdConfig">{{ t('action.save') }}</el-button>
+          </div>
+        </div>
+      </el-tab-pane>
       <el-tab-pane :label="t('systemManage.restartSettings')" name="restart">
         <div class="restart-setting">
           <div class="restart-setting-form">
@@ -99,6 +122,9 @@ watch(activeName, (val) => {
   }
   if (val === 'apikey') {
     queryOsdApiKey()
+  }
+  if (val === 'osd') {
+    queryOsdConfig()
   }
 })
 
@@ -184,6 +210,26 @@ const handleRegenerateApiKey = () => {
       ElMessage.success(t('common.operationSucceeded'))
     })
   }).catch(() => {})
+}
+
+const osdConfig = ref({ enterLabel: '', leaveLabel: '', xRatio: 0.7, yRatio: 0.6 })
+
+const queryOsdConfig = () => {
+  $API.boxQueryOsdConfig().then((res) => {
+    const d = res.resData || {}
+    osdConfig.value = {
+      enterLabel: d.enterLabel || '进入',
+      leaveLabel: d.leaveLabel || '离开',
+      xRatio: Number(d.xRatio ?? 0.7),
+      yRatio: Number(d.yRatio ?? 0.6)
+    }
+  })
+}
+
+const handleSaveOsdConfig = () => {
+  $API.boxSetOsdConfig({ ...osdConfig.value }).then(() => {
+    ElMessage.success(t('common.operationSucceeded'))
+  })
 }
 
 const confirmRestart = () => {

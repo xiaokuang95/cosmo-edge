@@ -197,6 +197,8 @@ void ApiRouter::RegisterSystemRoutes() {
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, QueryDevRestartParam);
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, QueryOsdApiKey);
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, RegenerateOsdApiKey);
+    ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, QueryOsdConfig);
+    ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, SetOsdConfig);
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, ResetSystem);
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, ExportFile);
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, CheckUpgradeSpace);

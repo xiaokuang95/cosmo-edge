@@ -8,6 +8,7 @@
 
 #include "flow/common/AreaLineUtil.h"
 #include "flow/stream/StreamViewerOverview.h"
+#include "util/PassFlowOsdConfig.h"
 #include "flow/stream/StreamViewerOverviewTypes.h"
 #include "media/Color.h"
 #include "service/detail/ServiceRegistry.h"
@@ -103,15 +104,16 @@ StreamViewerOverview::OverviewInfo StreamViewerOverview::GetOverviewDataFromLoca
         pass_flow_leave_ = last.second;
         StreamOverviewText text;
         StreamOverviewTextEl posText;
+        const auto cfg = PassFlowOsdConfig::Snapshot();
         posText.attrPriority = VideoOverviewAttrPriority::kPassFlow;
-        posText.text         = "进入 " + std::to_string(pass_flow_enter_);
+        posText.text         = cfg.enterLabel + " " + std::to_string(pass_flow_enter_);
         text.posTexts.push_back(posText);
-        posText.text = "离开 " + std::to_string(pass_flow_leave_);
+        posText.text = cfg.leaveLabel + " " + std::to_string(pass_flow_leave_);
         text.posTexts.push_back(posText);
-        const int th = 140;
-        const int w  = frame->GetWidth();
-        const int h  = frame->GetHeight();
-        text.pos     = util::Point(std::max(10, w * 7 / 10), std::max(th + 10, (h + th) / 2));
+        const int w = frame->GetWidth();
+        const int h = frame->GetHeight();
+        text.pos    = util::Point(std::max(10, static_cast<int>(w * cfg.xRatio)),
+                                  std::max(60, static_cast<int>(h * cfg.yRatio)));
         info.texts.push_back(text);
     } else {
         for (const auto& passFlowOverviews : infos_.passFlowOverviews) {

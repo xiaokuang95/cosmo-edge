@@ -73,6 +73,8 @@ public:
 
     System::MsgResetSystemSend Handle(System::MsgResetSystemRecv&& data, std::error_condition& errc);
     System::MsgQueryOsdApiKeySend Handle(System::MsgQueryOsdApiKeyRecv&& data, std::error_condition& errc);
+    System::MsgQueryOsdConfigSend Handle(System::MsgQueryOsdConfigRecv&& data, std::error_condition& errc);
+    System::MsgSetOsdConfigSend Handle(System::MsgSetOsdConfigRecv&& data, std::error_condition& errc);
     System::MsgRegenerateOsdApiKeySend Handle(System::MsgRegenerateOsdApiKeyRecv&& data,
                                               std::error_condition& errc);  //
 

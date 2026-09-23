@@ -1141,6 +1141,11 @@ export default {
   },
   systemManage: {
     apiKeyManage: 'apiKey 管理',
+    osdSettings: 'OSD 设置',
+    osdEnterLabel: '进入显示名称',
+    osdLeaveLabel: '离开显示名称',
+    osdPosX: '水平位置',
+    osdPosY: '垂直位置',
     apiKeyDesc: '第三方抓拍/通道接口密钥',
     apiKeyEmpty: '未生成',
     copyApiKey: '复制',

@@ -7,6 +7,7 @@
 #include "flow/stream/StreamViewerOverview.h"
 #include "util/FormatString.h"
 #include "util/PassFlowOsdStore.h"
+#include "util/PassFlowOsdConfig.h"
 
 namespace cosmo {
 
@@ -88,15 +89,15 @@ void StreamViewerOverview::ProcessPassFlowAlarm(const MsgRecAlarm& aiData) {
     pass_flow_leave_ = static_cast<int>(aiData.leaveTotalCount);
     PassFlowOsdStore::Put(task_id_, pass_flow_enter_, pass_flow_leave_);
     StreamOverviewText text;
-    const int th = 140;
-    const int x  = width_ > 0 ? width_ * 7 / 10 : 0;
-    const int y  = height_ > 0 ? (height_ + th) / 2 : th;
+    const auto cfg = PassFlowOsdConfig::Snapshot();
+    const int x  = width_ > 0 ? static_cast<int>(width_ * cfg.xRatio) : 0;
+    const int y  = height_ > 0 ? static_cast<int>(height_ * cfg.yRatio) : 0;
     text.pos     = util::Point(x, y);
     StreamOverviewTextEl posText;
     posText.attrPriority = VideoOverviewAttrPriority::kPassFlow;
-    posText.text         = "进入 " + std::to_string(pass_flow_enter_);
+    posText.text         = cfg.enterLabel + " " + std::to_string(pass_flow_enter_);
     text.posTexts.push_back(posText);
-    posText.text = "离开 " + std::to_string(pass_flow_leave_);
+    posText.text = cfg.leaveLabel + " " + std::to_string(pass_flow_leave_);
     text.posTexts.push_back(posText);
     AddAlarmPassFlowTextToLocal(aiData.streamIndex, aiData.index, aiData.timestamp, text);
 }

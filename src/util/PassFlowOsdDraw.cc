@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "flow/common/AreaLineUtil.h"
+#include "util/PassFlowOsdConfig.h"
 #include "service/detail/ServiceRegistry.h"
 #include "service/media/IVideoFrameOSD.h"
 #include "media/Color.h"
@@ -30,10 +31,11 @@ bool PassFlowOsdDraw(VideoFramePtr frame, const std::vector<MsgTaskArea>& areas,
     }
     const int w = frame->GetWidth();
     const int h = frame->GetHeight();
-    const int x = std::max(10, w * 7 / 10);
-    const int y = std::max(60, (h + 60) / 2);
-    osd.OSDDrawTextEx(x, y, "进入 " + std::to_string(enter), {220, 231, 255}, 22, {0, 0, 0}, 0, true, 0);
-    osd.OSDDrawTextEx(x, y + 40, "离开 " + std::to_string(leave), {220, 231, 255}, 22, {0, 0, 0}, 0, true, 0);
+    const auto cfg = PassFlowOsdConfig::Snapshot();
+    const int x = std::max(10, static_cast<int>(w * cfg.xRatio));
+    const int y = std::max(60, static_cast<int>(h * cfg.yRatio));
+    osd.OSDDrawTextEx(x, y, cfg.enterLabel + " " + std::to_string(enter), {220, 231, 255}, 22, {0, 0, 0}, 0, true, 0);
+    osd.OSDDrawTextEx(x, y + 40, cfg.leaveLabel + " " + std::to_string(leave), {220, 231, 255}, 22, {0, 0, 0}, 0, true, 0);
     return true;
 }
 

@@ -11,6 +11,7 @@
 #include "nn/core/inference_pipeline_metrics.h"
 #include "service/detail/ServiceRegistry.h"
 #include "util/OsdApiKey.h"
+#include "util/PassFlowOsdConfig.h"
 #include "service/modelguard/IModelAuthorizationService.h"
 #include "service/path/IUploadStagingService.h"
 #include "service/system/IConfigReadService.h"
@@ -622,6 +623,36 @@ System::MsgRegenerateOsdApiKeySend MessageSystemHandler::Handle(System::MsgRegen
     retData.resData.apiKey = cosmo::OsdApiKey::Generate();
     errc                   = cosmo::util::ErrorEnum::Success;
     return retData;
+}
+
+System::MsgQueryOsdConfigSend MessageSystemHandler::Handle(System::MsgQueryOsdConfigRecv&& /*data*/,
+                                                           std::error_condition& errc) {
+    System::MsgQueryOsdConfigSend retData{};
+    const auto cfg = cosmo::PassFlowOsdConfig::Snapshot();
+    retData.resData.enterLabel = cfg.enterLabel;
+    retData.resData.leaveLabel = cfg.leaveLabel;
+    retData.resData.xRatio     = cfg.xRatio;
+    retData.resData.yRatio     = cfg.yRatio;
+    errc                       = cosmo::util::ErrorEnum::Success;
+    return retData;
+}
+
+System::MsgSetOsdConfigSend MessageSystemHandler::Handle(System::MsgSetOsdConfigRecv&& data,
+                                                         std::error_condition& errc) {
+    cosmo::PassFlowOsdConfig cfg;
+    cfg.enterLabel = data.enterLabel;
+    cfg.leaveLabel = data.leaveLabel;
+    cfg.xRatio     = data.xRatio;
+    cfg.yRatio     = data.yRatio;
+    if (cfg.enterLabel.empty()) {
+        cfg.enterLabel = "\u8fdb\u5165";
+    }
+    if (cfg.leaveLabel.empty()) {
+        cfg.leaveLabel = "\u79bb\u5f00";
+    }
+    cosmo::PassFlowOsdConfig::Store(cfg);
+    errc = cosmo::util::ErrorEnum::Success;
+    return {};
 }
 
 }  // namespace cosmo
