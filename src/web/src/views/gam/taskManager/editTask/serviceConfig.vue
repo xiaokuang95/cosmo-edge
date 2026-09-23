@@ -1083,6 +1083,8 @@ const queryOsdConfig = () => {
       yRatio: Number(d.yRatio ?? 0.6),
       fontSize: Number(d.fontSize ?? 22)
     }
+  }).catch(() => {
+    osdConfig.value = { enterLabel: "进入", leaveLabel: "离开", xRatio: 0.7, yRatio: 0.6, fontSize: 22 }
   })
 }
 
@@ -1095,11 +1097,15 @@ const saveOsdConfig = () => {
   })
 }
 
-watch(activeName, (val) => {
-  if (val === params) {
-    queryOsdConfig()
-  }
-})
+watch(
+  activeName,
+  (val) => {
+    if (val === "params") {
+      queryOsdConfig()
+    }
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   init()
