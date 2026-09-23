@@ -27,11 +27,11 @@ systemctl stop cosmo.service
 killall -9 cosmo-engine nginx srs 2>/dev/null || true
 cp -a "$ENGINE" /appfs/cosmo_wander/cwai_data/bin/cosmo-engine
 chmod 775 /appfs/cosmo_wander/cwai_data/bin/cosmo-engine
-if [ -d build_rknn/install/web ]; then
-  # stale hashed chunks accumulate across incremental cmake installs;
-  # clean both sides or the browser may load an old chunk
-  rm -rf /appfs/cosmo_wander/cwai_data/web/assets
-  find build_rknn/install/web/assets -name "*.js" -delete 2>/dev/null || true
+if [ -d build_rknn/web/web_unified/dist ]; then
+  # stale hashed chunks accumulate across incremental cmake installs; wipe
+  # install/web and regenerate it from the clean vite dist, then mirror
+  rm -rf build_rknn/install/web /appfs/cosmo_wander/cwai_data/web
+  cmake --build build_rknn --target install -j2 >/dev/null
   rsync -a --delete build_rknn/install/web/ /appfs/cosmo_wander/cwai_data/web/
   mkdir -p /appfs/cosmo_wander/cwai_data/files/Interface
   cp -a build_rknn/install/web/staticfile/. /appfs/cosmo_wander/cwai_data/files/Interface/ 2>/dev/null || true
