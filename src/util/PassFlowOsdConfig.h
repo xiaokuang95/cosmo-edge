@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "media/Color.h"
+
 namespace cosmo {
 
 // User-tunable pass-flow OSD appearance: counter labels and on-screen position.
@@ -14,9 +16,12 @@ struct PassFlowOsdConfig {
     double xRatio{0.7};
     double yRatio{0.6};
     int fontSize{22};
+    std::string color{"#DCE7FF"};  // hex RGB, e.g. #FF6B6B
 
     static PassFlowOsdConfig Snapshot();              // thread-safe copy
     static void Store(const PassFlowOsdConfig& cfg);  // persist + update snapshot
+    // Parse color string to RGB; falls back to {220,231,255} on bad input.
+    media::Color TextColor() const;
 };
 
 }  // namespace cosmo

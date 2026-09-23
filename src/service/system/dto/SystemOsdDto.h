@@ -42,6 +42,7 @@ struct MsgQueryOsdConfigSend : public MsgSendHead {
         double xRatio{0.7};
         double yRatio{0.6};
         int fontSize{22};
+        std::string color{"#DCE7FF"};
         friend void to_json(nlohmann::json& j, const ResData& v);
         friend void from_json(const nlohmann::json& j, ResData& v);
     } resData;
@@ -55,6 +56,7 @@ struct MsgSetOsdConfigRecv : public MsgRecvHead {
     double xRatio{0.7};
     double yRatio{0.6};
     int fontSize{22};
+    std::string color{"#DCE7FF"};
     friend void to_json(nlohmann::json& j, const MsgSetOsdConfigRecv& v);
     friend void from_json(const nlohmann::json& j, MsgSetOsdConfigRecv& v);
 };

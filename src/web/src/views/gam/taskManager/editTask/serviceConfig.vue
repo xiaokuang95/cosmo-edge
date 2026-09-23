@@ -77,6 +77,9 @@
                   <el-form-item :label="t('systemManage.osdFontSize')">
                     <el-slider v-model="osdConfig.fontSize" :min="10" :max="64" :step="1" style="width: 210px" />
                   </el-form-item>
+                  <el-form-item :label="t('systemManage.osdColor')">
+                    <el-color-picker v-model="osdConfig.color" size="small" />
+                  </el-form-item>
                 </el-form>
                 <div class="osd-action-row" :style="{ marginLeft: osdFormLabelWidth }">
                   <el-button @click="parameterVisible = true">{{ t('action.reset') }}</el-button>
@@ -1063,7 +1066,7 @@ const LargeModelAlgorithmConfiguration = () => {
   window.open(`/sop/#/sop/modelScreen`, '_blank')
 }
 
-const osdConfig = ref({ enterLabel: '', leaveLabel: '', xRatio: 0.7, yRatio: 0.6, fontSize: 22 })
+const osdConfig = ref({ enterLabel: '', leaveLabel: '', xRatio: 0.7, yRatio: 0.6, fontSize: 22, color: '#DCE7FF' })
 // shared with the detection-area tab so its canvas preview follows saves
 provide('osdConfigLive', osdConfig)
 
@@ -1099,10 +1102,11 @@ const queryOsdConfig = () => {
       leaveLabel: d.leaveLabel || '离开',
       xRatio: Number(d.xRatio ?? 0.7),
       yRatio: Number(d.yRatio ?? 0.6),
-      fontSize: Number(d.fontSize ?? 22)
+      fontSize: Number(d.fontSize ?? 22),
+      color: d.color || '#DCE7FF'
     }
   }).catch(() => {
-    osdConfig.value = { enterLabel: "进入", leaveLabel: "离开", xRatio: 0.7, yRatio: 0.6, fontSize: 22 }
+    osdConfig.value = { enterLabel: "进入", leaveLabel: "离开", xRatio: 0.7, yRatio: 0.6, fontSize: 22, color: "#DCE7FF" }
   })
 }
 

@@ -41,6 +41,7 @@ void to_json(nlohmann::json& j, const MsgQueryOsdConfigSend::ResData& v) {
     j["xRatio"]     = v.xRatio;
     j["yRatio"]     = v.yRatio;
     j["fontSize"]   = v.fontSize;
+    j["color"]      = v.color;
 }
 void from_json(const nlohmann::json& j, MsgQueryOsdConfigSend::ResData& v) {
     JSON_OPT(j, v, enterLabel);
@@ -48,6 +49,7 @@ void from_json(const nlohmann::json& j, MsgQueryOsdConfigSend::ResData& v) {
     JSON_OPT(j, v, xRatio);
     JSON_OPT(j, v, yRatio);
     JSON_OPT(j, v, fontSize);
+    JSON_OPT(j, v, color);
 }
 void to_json(nlohmann::json& j, const MsgQueryOsdConfigSend& v) {
     to_json(j, static_cast<const MsgSendHead&>(v));
@@ -65,6 +67,7 @@ void to_json(nlohmann::json& j, const MsgSetOsdConfigRecv& v) {
     j["xRatio"]     = v.xRatio;
     j["yRatio"]     = v.yRatio;
     j["fontSize"]   = v.fontSize;
+    j["color"]      = v.color;
 }
 void from_json(const nlohmann::json& j, MsgSetOsdConfigRecv& v) {
     from_json(j, static_cast<MsgRecvHead&>(v));
@@ -73,6 +76,7 @@ void from_json(const nlohmann::json& j, MsgSetOsdConfigRecv& v) {
     JSON_OPT(j, v, xRatio);
     JSON_OPT(j, v, yRatio);
     JSON_OPT(j, v, fontSize);
+    JSON_OPT(j, v, color);
 }
 
 void to_json(nlohmann::json& j, const MsgSetOsdConfigSend& v) {

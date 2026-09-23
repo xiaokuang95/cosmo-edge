@@ -583,7 +583,7 @@ const drawOsdPreview = (context) => {
     context.lineWidth = Math.max(2, Math.round(fs / 8))
     context.strokeStyle = 'rgba(0,0,0,0.85)'
     context.strokeText(txt, x, ly)
-    context.fillStyle = 'rgb(220,231,255)'
+    context.fillStyle = cfg.color || 'rgb(220,231,255)'
     context.fillText(txt, x, ly)
   })
 }

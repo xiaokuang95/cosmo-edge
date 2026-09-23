@@ -163,7 +163,7 @@ void StreamViewerOverview::AttrToColor(VideoOverviewAttrPriority attrPriority, S
         const auto cfg = PassFlowOsdConfig::Snapshot();
         attr.fontSize  = cfg.fontSize;
         attr.lineDiff  = cfg.fontSize * 2 + 32;
-        attr.color     = {220, 231, 255};
+        attr.color     = cfg.TextColor();
         return;
     }
     if (VideoOverviewAttrPriority::kAlarmReport == attrPriority) {

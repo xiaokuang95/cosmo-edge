@@ -1142,6 +1142,7 @@ export default {
   systemManage: {
     apiKeyManage: 'apiKey 管理',
     osdSettings: 'OSD 设置',
+    osdColor: '文字颜色',
     saveOsd: '保存OSD',
     osdFontSize: '文字大小',
     osdEnterLabel: '进入显示名称',
