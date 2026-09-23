@@ -587,12 +587,12 @@ const drawOsdPreview = (context) => {
   const scale = canvas.width / 1280
   // engine stb_truetype renders the em-square at fontSize plus a 1px dilation
   // (visual bold) and a 1px outline — emulate with a slightly larger, bolder face
-  const fs = Math.max(8, (cfg.fontSize || 22) * scale * 1.15)
+  const fs = Math.max(8, (cfg.fontSize || 22) * 1.5 * scale)
   const lineGap = fs + 18 * scale
   const x = Math.max(4, Math.round(canvas.width * (cfg.xRatio ?? 0.7)))
   // engine y is the glyph TOP; canvas fillText y is the baseline
   const y = Math.max(fs + 2, canvas.height * (cfg.yRatio ?? 0.6)) + fs * 0.85
-  context.font = `600 ${fs}px OsdHanSans, "Microsoft YaHei", "PingFang SC", sans-serif`
+  context.font = `${fs}px OsdHanSans, "Microsoft YaHei", "PingFang SC", sans-serif`
   context.textAlign = 'left'
   context.textBaseline = 'alphabetic'
   ;[`${cfg.enterLabel} 0`, `${cfg.leaveLabel} 0`].forEach((txt, i) => {
