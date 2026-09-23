@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount, getCurrentInstance, nextTick, computed } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, getCurrentInstance, nextTick, computed, provide } from 'vue'
 import { t, currentLocale } from '@/i18n'
 import { resolveResourceAlgorithmName } from '@/utils/i18nResource'
 import { QuestionFilled, CircleCheckFilled } from '@element-plus/icons-vue'
@@ -1064,6 +1064,8 @@ const LargeModelAlgorithmConfiguration = () => {
 }
 
 const osdConfig = ref({ enterLabel: '', leaveLabel: '', xRatio: 0.7, yRatio: 0.6, fontSize: 22 })
+// shared with the detection-area tab so its canvas preview follows saves
+provide('osdConfigLive', osdConfig)
 
 // shrink the label column on small screens so the OSD block stays usable
 const osdWinWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1920)

@@ -120,7 +120,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, getCurrentInstance, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, getCurrentInstance, nextTick, inject } from 'vue'
 import { t } from '@/i18n'
 import { resolveResourceParamText } from '@/utils/i18nResource'
 import DetectionCanvas from './DetectionCanvas.vue'
@@ -165,6 +165,13 @@ const loadOsdPreview = () => {
     osdPreview.value = res.resData || null
   }).catch(() => {})
 }
+// follow saves made on the params tab without remounting
+const osdConfigLive = inject('osdConfigLive', null)
+watch(osdConfigLive || ref(null), (val) => {
+  if (val) {
+    osdPreview.value = { ...val }
+  }
+}, { deep: true })
 const imgSrc = ref('')
 const isLoadingImage = ref(false) // 添加加载状态
 const lastChannelId = ref('') // 缓存上次的channelId
