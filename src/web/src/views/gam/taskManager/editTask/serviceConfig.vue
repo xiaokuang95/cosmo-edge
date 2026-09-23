@@ -61,7 +61,7 @@
                     </span>
                   </el-tooltip>
                 </div>
-                <el-form class="osd-display" label-position="right" size="small" :label-width="currentLocale === 'en-US' ? '350px' : '250px'">
+                <el-form class="osd-display" label-position="right" size="small" :label-width="osdFormLabelWidth">
                   <el-form-item :label="t('systemManage.osdEnterLabel')">
                     <el-input v-model="osdConfig.enterLabel" size="small" style="width: 210px" maxlength="16" />
                   </el-form-item>
@@ -78,9 +78,9 @@
                     <el-slider v-model="osdConfig.fontSize" :min="10" :max="64" :step="1" style="width: 210px" />
                   </el-form-item>
                 </el-form>
-                <div style="margin-left:250px;">
-                  <el-button style="margin-right:15px;" @click="parameterVisible = true">{{ t('action.reset') }}</el-button>
-                  <el-button style="margin-right:15px;" type="primary" @click="batch">{{ t('glossary.batchApply') }}</el-button>
+                <div class="osd-action-row" :style="{ marginLeft: osdFormLabelWidth }">
+                  <el-button @click="parameterVisible = true">{{ t('action.reset') }}</el-button>
+                  <el-button type="primary" @click="batch">{{ t('glossary.batchApply') }}</el-button>
                   <el-button type="primary" @click="saveOsdConfig">{{ t('systemManage.saveOsd') }}</el-button>
                 </div>
               </el-tab-pane>
@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, getCurrentInstance, nextTick, computed } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, getCurrentInstance, nextTick, computed } from 'vue'
 import { t, currentLocale } from '@/i18n'
 import { resolveResourceAlgorithmName } from '@/utils/i18nResource'
 import { QuestionFilled, CircleCheckFilled } from '@element-plus/icons-vue'
@@ -1065,6 +1065,27 @@ const LargeModelAlgorithmConfiguration = () => {
 
 const osdConfig = ref({ enterLabel: '', leaveLabel: '', xRatio: 0.7, yRatio: 0.6, fontSize: 22 })
 
+// shrink the label column on small screens so the OSD block stays usable
+const osdWinWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1920)
+const osdFormLabelWidth = computed(() => {
+  const w = osdWinWidth.value
+  if (currentLocale.value === 'en-US') {
+    return w < 1500 ? '220px' : '350px'
+  }
+  return w < 1400 ? '170px' : '250px'
+})
+const osdOnResize = () => {
+  osdWinWidth.value = window.innerWidth
+}
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('resize', osdOnResize)
+}
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+    window.removeEventListener('resize', osdOnResize)
+  }
+})
+
 const queryOsdConfig = () => {
   if (typeof proxy.$API.boxQueryOsdConfig !== 'function') {
     return
@@ -1313,4 +1334,13 @@ onMounted(() => {
   text-align: center;
 }
 
+.osd-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.osd-action-row .el-button {
+  margin-left: 0 !important;
+}
 </style>
