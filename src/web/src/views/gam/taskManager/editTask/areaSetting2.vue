@@ -6,7 +6,7 @@
         <el-button v-if="retroDirectParamIndex !== -1" :disabled="isDrawingLine" @click="changeRetroDirection"
           type="primary" size="small">{{ t('action.adjustArrowDirection') }}</el-button>
       </div>
-      <detection-canvas id="onboarding-detection-canvas" ref="canvasRef" :width="width" :height="height" :imageSrc="imgSrc" :allPoints="allPoints"
+      <detection-canvas id="onboarding-detection-canvas" ref="canvasRef" :width="width" :height="height" :imageSrc="imgSrc" :allPoints="allPoints" :osdPreview="osdPreview"
         :activeIndex="activeIndex" :shieldActiveIndex="shieldActiveIndex" :regionType="regionType"
         :isDrawingLine="isDrawingLine" :associatedAreaConfig="associatedAreaConfig"
         :retroDirectType="retroDirectType"></detection-canvas>
@@ -156,6 +156,15 @@ const resolveHeaderName = (item) =>
 
 const width = ref(550)
 const height = ref(550 / 1.8)
+
+// live preview of the pass-flow OSD (labels + position + font size)
+const osdPreview = ref(null)
+const loadOsdPreview = () => {
+  if (typeof proxy.$API.boxQueryOsdConfig !== 'function') return
+  proxy.$API.boxQueryOsdConfig().then((res) => {
+    osdPreview.value = res.resData || null
+  }).catch(() => {})
+}
 const imgSrc = ref('')
 const isLoadingImage = ref(false) // 添加加载状态
 const lastChannelId = ref('') // 缓存上次的channelId
@@ -864,6 +873,7 @@ const deleteDrawingLine = () => {
 }
 
 onMounted(() => {
+  loadOsdPreview()
   handlePoints()
   // 只在有channelId时才获取图片
   if (props.config?.channelId) {

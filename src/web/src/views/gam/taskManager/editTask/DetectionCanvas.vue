@@ -32,6 +32,10 @@ const { proxy } = getCurrentInstance()
 const props = defineProps({
   width: Number,
   height: Number,
+  osdPreview: {
+    type: Object,
+    default: null
+  },
   imageSrc: String,
   allPoints: Array,
   activeIndex: Number,
@@ -178,6 +182,8 @@ const redrawCanvas = () => {
       drawText(props.associatedAreaConfig[0].name)
     }
   }
+
+  drawOsdPreview(context)
 }
 
 const drawPolygons = (points, polygonIndex, colorConfig) => {
@@ -558,6 +564,30 @@ const pointInRect = (x, y, point) => {
   )
 }
 
+// OSD preview: pass-flow enter/leave counters at the configured position/size,
+// scaled from the 1280x720 frame coordinates to the canvas size.
+const drawOsdPreview = (context) => {
+  const cfg = props.osdPreview
+  if (!context || !cfg || !cfg.enterLabel) return
+  const canvas = canvasRef.value
+  if (!canvas) return
+  const scale = canvas.width / 1280
+  const fs = Math.max(8, Math.round((cfg.fontSize || 22) * scale))
+  const lineGap = fs + Math.max(2, Math.round(18 * scale))
+  const x = Math.max(4, Math.round(canvas.width * (cfg.xRatio ?? 0.7)))
+  const y = Math.max(fs + 2, Math.round(canvas.height * (cfg.yRatio ?? 0.6)))
+  context.font = `${fs}px Arial`
+  context.textAlign = 'left'
+  ;[`${cfg.enterLabel} 0`, `${cfg.leaveLabel} 0`].forEach((txt, i) => {
+    const ly = y + i * lineGap
+    context.lineWidth = Math.max(2, Math.round(fs / 8))
+    context.strokeStyle = 'rgba(0,0,0,0.85)'
+    context.strokeText(txt, x, ly)
+    context.fillStyle = 'rgb(220,231,255)'
+    context.fillText(txt, x, ly)
+  })
+}
+
 const drawText = (text) => {
   ctx.value.font = '20px Arial'
   ctx.value.fillStyle = 'white'
@@ -603,6 +633,8 @@ const pointsToRadio = (point) => {
     yRatio: Number((point[1] / props.height).toFixed(6))
   }
 }
+
+watch(() => props.osdPreview, () => redrawCanvas(), { deep: true })
 
 onMounted(() => {
   initCanvas()
