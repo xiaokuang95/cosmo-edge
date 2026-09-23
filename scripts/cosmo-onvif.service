@@ -1,0 +1,13 @@
+[Unit]
+Description=Cosmo ONVIF device/media service (SOAP + WS-Discovery)
+After=cosmo.service
+Requires=cosmo.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/cosmo-osd/onvif_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

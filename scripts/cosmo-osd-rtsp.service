@@ -1,0 +1,13 @@
+[Unit]
+Description=Cosmo OSD RTSP relay (FLV -> RTSP)
+After=cosmo.service
+Requires=cosmo.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/cosmo-osd/osd_rtsp_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
