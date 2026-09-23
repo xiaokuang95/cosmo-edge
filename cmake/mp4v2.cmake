@@ -14,7 +14,7 @@ set(MP4V2_CONFIGURE_ARGS
 )
 
 if(COSMO_TARGET_ARCH STREQUAL "aarch64")
-    list(APPEND MP4V2_CONFIGURE_ARGS --host=aarch64-linux-gnu)
+    list(APPEND MP4V2_CONFIGURE_ARGS --build=aarch64-linux-gnu --host=aarch64-linux-gnu)
 endif()
 
 ExternalProject_Add(

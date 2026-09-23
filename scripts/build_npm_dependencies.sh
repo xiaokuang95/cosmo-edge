@@ -15,7 +15,16 @@ fi
 cd "${web_workspace}"
 npm_ci_args=(ci --offline --include=dev --loglevel=error --no-audit --no-fund)
 
+install_arm64_optional() {
+  # package-lock only vendors x64 optional rollup/esbuild.
+  if [ "$(uname -m)" = "aarch64" ]; then
+    npm install --no-save --no-audit --no-fund --loglevel=error \
+      @rollup/rollup-linux-arm64-gnu @esbuild/linux-arm64
+  fi
+}
+
 if npm "${npm_ci_args[@]}" >/dev/null 2>&1; then
+    install_arm64_optional
     echo "npm dependencies installed from the persistent offline cache."
     exit 0
 fi
@@ -60,4 +69,5 @@ done
 # The online phase only populates the content-addressed cache. Installation is
 # always offline and still verifies every package against package-lock.json.
 npm "${npm_ci_args[@]}"
+install_arm64_optional
 echo "npm dependencies installed from the newly populated offline cache."
