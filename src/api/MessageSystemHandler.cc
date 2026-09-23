@@ -633,6 +633,7 @@ System::MsgQueryOsdConfigSend MessageSystemHandler::Handle(System::MsgQueryOsdCo
     retData.resData.leaveLabel = cfg.leaveLabel;
     retData.resData.xRatio     = cfg.xRatio;
     retData.resData.yRatio     = cfg.yRatio;
+    retData.resData.fontSize   = cfg.fontSize;
     errc                       = cosmo::util::ErrorEnum::Success;
     return retData;
 }
@@ -644,6 +645,7 @@ System::MsgSetOsdConfigSend MessageSystemHandler::Handle(System::MsgSetOsdConfig
     cfg.leaveLabel = data.leaveLabel;
     cfg.xRatio     = data.xRatio;
     cfg.yRatio     = data.yRatio;
+    cfg.fontSize   = data.fontSize;
     if (cfg.enterLabel.empty()) {
         cfg.enterLabel = "\u8fdb\u5165";
     }

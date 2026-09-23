@@ -158,6 +158,14 @@ StreamViewerOverview::OverviewInfo StreamViewerOverview::GetOverviewDataFromLoca
 }
 
 void StreamViewerOverview::AttrToColor(VideoOverviewAttrPriority attrPriority, StreamOverviewAttr& attr) {
+    // Configurable pass-flow counters: scale font and line spacing.
+    if (VideoOverviewAttrPriority::kPassFlow == attrPriority) {
+        const auto cfg = PassFlowOsdConfig::Snapshot();
+        attr.fontSize  = cfg.fontSize;
+        attr.lineDiff  = cfg.fontSize * 2 + 32;
+        attr.color     = {220, 231, 255};
+        return;
+    }
     if (VideoOverviewAttrPriority::kAlarmReport == attrPriority) {
         attr.color = {255, 107, 107};  // coral red #FF6B6B
     } else if (VideoOverviewAttrPriority::kAlarmFilter == attrPriority) {
@@ -176,10 +184,6 @@ void StreamViewerOverview::AttrToColor(VideoOverviewAttrPriority attrPriority, S
         attr.color = {138, 148, 184};  // slate #8A94B8
     } else if (VideoOverviewAttrPriority::kCount == attrPriority) {
         attr.color = {220, 231, 255};  // cool white-blue #DCE7FF
-    } else if (VideoOverviewAttrPriority::kPassFlow == attrPriority) {
-        attr.color    = {220, 231, 255};
-        attr.fontSize = 19;
-        attr.lineDiff = 70;
     } else {
         attr.color     = {220, 231, 255};
         attr.lineWidth = 2;

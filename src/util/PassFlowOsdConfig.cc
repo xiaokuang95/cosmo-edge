@@ -18,6 +18,7 @@ struct Holder {
         c.leaveLabel.resize(std::min<size_t>(c.leaveLabel.size(), 32));
         c.xRatio = std::clamp(c.xRatio, 0.0, 1.0);
         c.yRatio = std::clamp(c.yRatio, 0.0, 1.0);
+        c.fontSize = std::clamp(c.fontSize, 10, 64);
     }
 
     static PassFlowOsdConfig Load() {
@@ -36,6 +37,7 @@ struct Holder {
             if (j.contains("leaveLabel")) c.leaveLabel = j["leaveLabel"].get<std::string>();
             if (j.contains("xRatio")) c.xRatio = j["xRatio"].get<double>();
             if (j.contains("yRatio")) c.yRatio = j["yRatio"].get<double>();
+            if (j.contains("fontSize")) c.fontSize = j["fontSize"].get<int>();
         } catch (...) {
         }
         Clamp(c);
@@ -70,6 +72,7 @@ void PassFlowOsdConfig::Store(const PassFlowOsdConfig& cfg) {
         j["leaveLabel"] = c.leaveLabel;
         j["xRatio"]     = c.xRatio;
         j["yRatio"]     = c.yRatio;
+        j["fontSize"]   = c.fontSize;
         ofs << j.dump(2) << std::endl;
     } catch (...) {
     }

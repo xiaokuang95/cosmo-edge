@@ -1142,6 +1142,7 @@ export default {
   systemManage: {
     apiKeyManage: 'apiKey Management',
     osdSettings: 'OSD Settings',
+    osdFontSize: 'Font Size',
     osdEnterLabel: 'Enter Label',
     osdLeaveLabel: 'Leave Label',
     osdPosX: 'Horizontal Position',

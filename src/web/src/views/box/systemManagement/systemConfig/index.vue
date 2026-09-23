@@ -54,6 +54,9 @@
               <el-form-item :label="t('systemManage.osdPosY')">
                 <el-slider v-model="osdConfig.yRatio" :min="0" :max="1" :step="0.05" style="width: 200px; margin-right: 12px" />
               </el-form-item>
+              <el-form-item :label="t('systemManage.osdFontSize')">
+                <el-slider v-model="osdConfig.fontSize" :min="10" :max="64" :step="1" style="width: 200px; margin-right: 12px" />
+              </el-form-item>
             </el-form>
           </div>
           <div class="osd-setting-tools">
@@ -212,7 +215,7 @@ const handleRegenerateApiKey = () => {
   }).catch(() => {})
 }
 
-const osdConfig = ref({ enterLabel: '', leaveLabel: '', xRatio: 0.7, yRatio: 0.6 })
+const osdConfig = ref({ enterLabel: '', leaveLabel: '', xRatio: 0.7, yRatio: 0.6, fontSize: 22 })
 
 const queryOsdConfig = () => {
   $API.boxQueryOsdConfig().then((res) => {
@@ -221,7 +224,8 @@ const queryOsdConfig = () => {
       enterLabel: d.enterLabel || '进入',
       leaveLabel: d.leaveLabel || '离开',
       xRatio: Number(d.xRatio ?? 0.7),
-      yRatio: Number(d.yRatio ?? 0.6)
+      yRatio: Number(d.yRatio ?? 0.6),
+      fontSize: Number(d.fontSize ?? 22)
     }
   })
 }

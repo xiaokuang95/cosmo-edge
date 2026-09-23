@@ -13,6 +13,7 @@ struct PassFlowOsdConfig {
     std::string leaveLabel{"\u79bb\u5f00"};
     double xRatio{0.7};
     double yRatio{0.6};
+    int fontSize{22};
 
     static PassFlowOsdConfig Snapshot();              // thread-safe copy
     static void Store(const PassFlowOsdConfig& cfg);  // persist + update snapshot
