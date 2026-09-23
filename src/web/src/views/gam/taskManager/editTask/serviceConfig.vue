@@ -61,24 +61,24 @@
                     </span>
                   </el-tooltip>
                 </div>
-                <el-form class="osd-display" label-position="right" :label-width="currentLocale === 'en-US' ? '170px' : '120px'">
+                <el-form class="osd-display" label-position="right" size="small" :label-width="currentLocale === 'en-US' ? '350px' : '250px'">
                   <el-form-item :label="t('systemManage.osdEnterLabel')">
-                    <el-input v-model="osdConfig.enterLabel" class="width200" size="small" maxlength="16" />
+                    <el-input v-model="osdConfig.enterLabel" size="small" style="width: 210px" maxlength="16" />
                   </el-form-item>
                   <el-form-item :label="t('systemManage.osdLeaveLabel')">
-                    <el-input v-model="osdConfig.leaveLabel" class="width200" size="small" maxlength="16" />
+                    <el-input v-model="osdConfig.leaveLabel" size="small" style="width: 210px" maxlength="16" />
                   </el-form-item>
                   <el-form-item :label="t('systemManage.osdPosX')">
-                    <el-slider v-model="osdConfig.xRatio" :min="0" :max="1" :step="0.05" style="width: 200px" />
+                    <el-slider v-model="osdConfig.xRatio" :min="0" :max="1" :step="0.05" style="width: 210px" />
                   </el-form-item>
                   <el-form-item :label="t('systemManage.osdPosY')">
-                    <el-slider v-model="osdConfig.yRatio" :min="0" :max="1" :step="0.05" style="width: 200px" />
+                    <el-slider v-model="osdConfig.yRatio" :min="0" :max="1" :step="0.05" style="width: 210px" />
                   </el-form-item>
                   <el-form-item :label="t('systemManage.osdFontSize')">
-                    <el-slider v-model="osdConfig.fontSize" :min="10" :max="64" :step="1" style="width: 200px" />
+                    <el-slider v-model="osdConfig.fontSize" :min="10" :max="64" :step="1" style="width: 210px" />
                   </el-form-item>
                 </el-form>
-                <div style="margin-left:160px;">
+                <div style="margin-left:250px;">
                   <el-button style="margin-right:15px;" @click="parameterVisible = true">{{ t('action.reset') }}</el-button>
                   <el-button style="margin-right:15px;" type="primary" @click="batch">{{ t('glossary.batchApply') }}</el-button>
                   <el-button type="primary" @click="saveOsdConfig">{{ t('systemManage.saveOsd') }}</el-button>

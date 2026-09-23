@@ -28,6 +28,10 @@ killall -9 cosmo-engine nginx srs 2>/dev/null || true
 cp -a "$ENGINE" /appfs/cosmo_wander/cwai_data/bin/cosmo-engine
 chmod 775 /appfs/cosmo_wander/cwai_data/bin/cosmo-engine
 if [ -d build_rknn/install/web ]; then
+  # stale hashed chunks accumulate across incremental cmake installs;
+  # clean both sides or the browser may load an old chunk
+  rm -rf /appfs/cosmo_wander/cwai_data/web/assets
+  find build_rknn/install/web/assets -name "*.js" -delete 2>/dev/null || true
   rsync -a --delete build_rknn/install/web/ /appfs/cosmo_wander/cwai_data/web/
   mkdir -p /appfs/cosmo_wander/cwai_data/files/Interface
   cp -a build_rknn/install/web/staticfile/. /appfs/cosmo_wander/cwai_data/files/Interface/ 2>/dev/null || true
