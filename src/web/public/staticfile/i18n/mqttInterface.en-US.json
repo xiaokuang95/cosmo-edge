@@ -1,6 +1,6 @@
 {
-  "docTitle": "AI Box MQTT API Documentation",
-  "mqtt.hero.title": "AI Box MQTT Protocol Integration",
+  "docTitle": "MQTT API Documentation",
+  "mqtt.hero.title": "MQTT Protocol Integration",
   "mqtt.hero.subtitle": "Used for registration, heartbeat, and business passthrough interaction between the device and the platform via MQTT.",
 
   "mqtt.section.connectionAuth": "Connection Authentication",
