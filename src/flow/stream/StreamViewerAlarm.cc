@@ -6,6 +6,7 @@
 
 #include "flow/stream/StreamViewerOverview.h"
 #include "util/FormatString.h"
+#include "util/PassFlowOsdStore.h"
 
 namespace cosmo {
 
@@ -82,24 +83,20 @@ void StreamViewerOverview::ProcessPersonCountAlarm(const MsgRecAlarm& aiData) {
 }
 
 void StreamViewerOverview::ProcessPassFlowAlarm(const MsgRecAlarm& aiData) {
+    pass_flow_osd_   = true;
+    pass_flow_enter_ = static_cast<int>(aiData.enterTotalCount);
+    pass_flow_leave_ = static_cast<int>(aiData.leaveTotalCount);
+    PassFlowOsdStore::Put(task_id_, pass_flow_enter_, pass_flow_leave_);
     StreamOverviewText text;
-    text.pos = util::Point(width_ - 300, 300);
+    const int th = 140;
+    const int x  = width_ > 0 ? width_ * 7 / 10 : 0;
+    const int y  = height_ > 0 ? (height_ + th) / 2 : th;
+    text.pos     = util::Point(x, y);
     StreamOverviewTextEl posText;
-    int inAlarm  = 0;
-    int outAlarm = 0;
-    if (!pass_flow_info_.record && aiData.enterTotalCount > 0) {
-        pass_flow_info_.enterNumber = aiData.enterTotalCount;
-        pass_flow_info_.leaveNumber = aiData.leaveTotalCount;
-        pass_flow_info_.record      = true;
-    } else {
-        inAlarm  = aiData.enterTotalCount - pass_flow_info_.enterNumber;
-        outAlarm = aiData.leaveTotalCount - pass_flow_info_.leaveNumber;
-    }
-
-    posText.text         = "IN : " + std::to_string(inAlarm);
     posText.attrPriority = VideoOverviewAttrPriority::kPassFlow;
+    posText.text         = "进入 " + std::to_string(pass_flow_enter_);
     text.posTexts.push_back(posText);
-    posText.text = "OUT: " + std::to_string(outAlarm);
+    posText.text = "离开 " + std::to_string(pass_flow_leave_);
     text.posTexts.push_back(posText);
     AddAlarmPassFlowTextToLocal(aiData.streamIndex, aiData.index, aiData.timestamp, text);
 }

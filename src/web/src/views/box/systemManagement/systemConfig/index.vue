@@ -13,6 +13,31 @@
       <el-tab-pane :label="t('systemManage.warningSettings')" name="warning">
         <warning-set v-if="activeName === 'warning'" />
       </el-tab-pane>
+      <el-tab-pane :label="t('systemManage.apiKeyManage')" name="apikey">
+        <div class="apikey-setting" v-if="activeName === 'apikey'">
+          <div class="apikey-setting-form">
+            <el-form :label-width="currentLocale === 'en-US' ? '170px' : '120px'">
+              <el-form-item :label="t('systemManage.apiKeyDesc')">
+                <div class="apikey-row">
+                  <el-input
+                    v-model="apiKeyValue"
+                    class="apikey-input"
+                    size="small"
+                    readonly
+                    :placeholder="t('systemManage.apiKeyEmpty')"
+                  />
+                  <el-button size="small" @click="handleCopyApiKey" :disabled="!apiKeyValue">
+                    {{ t('systemManage.copyApiKey') }}
+                  </el-button>
+                  <el-button size="small" type="primary" @click="handleRegenerateApiKey">
+                    {{ t('systemManage.regenerateApiKey') }}
+                  </el-button>
+                </div>
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
+      </el-tab-pane>
       <el-tab-pane :label="t('systemManage.restartSettings')" name="restart">
         <div class="restart-setting">
           <div class="restart-setting-form">
@@ -40,7 +65,7 @@
 
 <script setup>
 import { ref, computed, watch, getCurrentInstance } from 'vue'
-import { ElMessage, ElLoading } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import DeviceInfo from './components/DeviceInfo.vue'
 import ResourceConsume from '@/views/home/components/ResourceConsume.vue'
 import TimeConfigSet from './components/TimeConfigSet.vue'
@@ -71,6 +96,9 @@ const dayOptions = computed(() => [
 watch(activeName, (val) => {
   if (val === 'restart') {
     queryDevRestartParam()
+  }
+  if (val === 'apikey') {
+    queryOsdApiKey()
   }
 })
 
@@ -118,6 +146,46 @@ const handleSaveConfig = () => {
   })
 }
 
+const apiKeyValue = ref('')
+
+const queryOsdApiKey = () => {
+  $API.boxQueryOsdApiKey().then((res) => {
+    apiKeyValue.value = res.resData?.apiKey || ''
+  })
+}
+
+const handleCopyApiKey = async () => {
+  try {
+    await navigator.clipboard.writeText(apiKeyValue.value)
+    ElMessage.success(t('systemManage.copySuccess'))
+  } catch (e) {
+    const ta = document.createElement('textarea')
+    ta.value = apiKeyValue.value
+    document.body.appendChild(ta)
+    ta.select()
+    try {
+      document.execCommand('copy')
+      ElMessage.success(t('systemManage.copySuccess'))
+    } catch (e2) {
+      ElMessage.warning(t('systemManage.copyFailed'))
+    }
+    document.body.removeChild(ta)
+  }
+}
+
+const handleRegenerateApiKey = () => {
+  ElMessageBox.confirm(t('systemManage.regenerateApiKeyConfirm'), t('common.notice'), {
+    confirmButtonText: t('action.ok'),
+    cancelButtonText: t('action.cancel'),
+    type: 'warning'
+  }).then(() => {
+    $API.boxRegenerateOsdApiKey().then((res) => {
+      apiKeyValue.value = res.resData?.apiKey || ''
+      ElMessage.success(t('common.operationSucceeded'))
+    })
+  }).catch(() => {})
+}
+
 const confirmRestart = () => {
   $API.boxResetSystem({ resetOperation: 0 }).then(() => {
     const loading = ElLoading.service({
@@ -159,5 +227,18 @@ const confirmRestart = () => {
 
 .restart-setting-tools {
   margin-top: 5px;
+}
+.apikey-setting-form {
+  width: 560px;
+}
+.apikey-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+.apikey-input {
+  flex: 1;
+  min-width: 260px;
 }
 </style>

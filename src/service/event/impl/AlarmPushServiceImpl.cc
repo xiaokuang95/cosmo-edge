@@ -142,6 +142,7 @@ bool AlarmPushServiceImpl::SaveCfg(const AlarmPushParam& config) {
 }
 
 bool AlarmPushServiceImpl::OfflinePushData(AlarmEventRecord& data) {
+    // Pass-flow events participate in 24h offline retry like other algorithms.
     if (event_post_que_.KeyInQueue(data.id)) {
         cosmo::AsyncQueueInfo status;
         event_post_que_.Status(status);

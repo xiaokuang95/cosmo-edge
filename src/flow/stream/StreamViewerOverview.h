@@ -165,6 +165,9 @@ private:
     int width_{0};
     int height_{0};
     StreamOverviewPassFlowRecord pass_flow_info_;
+    bool pass_flow_osd_{false};
+    int pass_flow_enter_{0};
+    int pass_flow_leave_{0};
     StreamOverviewIdentity frame_identity_;        // frame being processed
     StreamOverviewIdentity fresh_frame_identity_;  // latest frame
     StreamOverviewInfo infos_;

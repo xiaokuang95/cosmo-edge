@@ -52,6 +52,7 @@ private:
 
     int ViewerEncoderCountLocked() const;
     void CheckAliveTasks();
+    void EnsurePublishersLocked();
     void HeartBeatWatchdog();
     std::vector<cosmo::StreamViewerPtr>::iterator FindViewer(const std::string& channelId,
                                                              const std::string& algCode);

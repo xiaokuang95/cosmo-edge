@@ -15,6 +15,7 @@
 #include "service/task/ITaskQuery.h"
 #include "util/FormatString.h"
 #include "util/Log.h"
+#include "util/PassFlowOsdStore.h"
 #include "util/TimeUtil.h"
 
 namespace cosmo {
@@ -96,9 +97,27 @@ StreamViewerOverview::OverviewInfo StreamViewerOverview::GetOverviewDataFromLoca
         break;
     }
 
-    for (const auto& passFlowOverviews : infos_.passFlowOverviews) {
-        info.texts.push_back(passFlowOverviews.text);
-        break;
+    if (pass_flow_osd_) {
+        auto last        = PassFlowOsdStore::Get(task_id_);
+        pass_flow_enter_ = last.first;
+        pass_flow_leave_ = last.second;
+        StreamOverviewText text;
+        StreamOverviewTextEl posText;
+        posText.attrPriority = VideoOverviewAttrPriority::kPassFlow;
+        posText.text         = "进入 " + std::to_string(pass_flow_enter_);
+        text.posTexts.push_back(posText);
+        posText.text = "离开 " + std::to_string(pass_flow_leave_);
+        text.posTexts.push_back(posText);
+        const int th = 140;
+        const int w  = frame->GetWidth();
+        const int h  = frame->GetHeight();
+        text.pos     = util::Point(std::max(10, w * 7 / 10), std::max(th + 10, (h + th) / 2));
+        info.texts.push_back(text);
+    } else {
+        for (const auto& passFlowOverviews : infos_.passFlowOverviews) {
+            info.texts.push_back(passFlowOverviews.text);
+            break;
+        }
     }
 
     bool bHaveAlarm = false;

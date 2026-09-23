@@ -10,6 +10,7 @@
 #include "media/VideoEncoder.h"
 #include "nn/core/inference_pipeline_metrics.h"
 #include "service/detail/ServiceRegistry.h"
+#include "util/OsdApiKey.h"
 #include "service/modelguard/IModelAuthorizationService.h"
 #include "service/path/IUploadStagingService.h"
 #include "service/system/IConfigReadService.h"
@@ -600,6 +601,27 @@ System::MsgUpgradeSend MessageSystemHandler::Handle(System::MsgUpgradeRecv&& dat
     }
     data.filePath = lease.Path();
     return Handle(std::move(data), errc);
+}
+
+
+System::MsgQueryOsdApiKeySend MessageSystemHandler::Handle(System::MsgQueryOsdApiKeyRecv&& /*data*/,
+                                                            std::error_condition& errc) {
+    System::MsgQueryOsdApiKeySend retData{};
+    std::string key = cosmo::OsdApiKey::Read();
+    if (key.empty()) {
+        key = cosmo::OsdApiKey::Generate();
+    }
+    retData.resData.apiKey = key;
+    errc                   = cosmo::util::ErrorEnum::Success;
+    return retData;
+}
+
+System::MsgRegenerateOsdApiKeySend MessageSystemHandler::Handle(System::MsgRegenerateOsdApiKeyRecv&& /*data*/,
+                                                                 std::error_condition& errc) {
+    System::MsgRegenerateOsdApiKeySend retData{};
+    retData.resData.apiKey = cosmo::OsdApiKey::Generate();
+    errc                   = cosmo::util::ErrorEnum::Success;
+    return retData;
 }
 
 }  // namespace cosmo

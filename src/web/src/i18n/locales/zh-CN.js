@@ -1140,6 +1140,14 @@ export default {
     clear: '清空'
   },
   systemManage: {
+    apiKeyManage: 'apiKey 管理',
+    apiKeyDesc: '第三方抓拍/通道接口密钥',
+    apiKeyEmpty: '未生成',
+    copyApiKey: '复制',
+    regenerateApiKey: '重新生成',
+    regenerateApiKeyConfirm: '重新生成后旧密钥立即失效，确定重新生成？',
+    copySuccess: '已复制',
+    copyFailed: '复制失败，请手动复制',
     modelAuthorization: '模型授权',
     authorizationStatus: '授权状态',
     authorized: '已授权',

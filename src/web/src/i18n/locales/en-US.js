@@ -1140,6 +1140,14 @@ export default {
     clear: 'Clear'
   },
   systemManage: {
+    apiKeyManage: 'apiKey Management',
+    apiKeyDesc: 'Third-party snapshot / channel API key',
+    apiKeyEmpty: 'Not generated',
+    copyApiKey: 'Copy',
+    regenerateApiKey: 'Regenerate',
+    regenerateApiKeyConfirm: 'The old key becomes invalid immediately. Regenerate?',
+    copySuccess: 'Copied',
+    copyFailed: 'Copy failed, please copy manually',
     modelAuthorization: 'Model Authorization',
     authorizationStatus: 'Authorization Status',
     authorized: 'Authorized',

@@ -12,8 +12,10 @@
 #include "media/PreviewPipelineMetrics.h"
 #include "service/detail/ServiceRegistry.h"
 #include "service/media/IVideoFrameOSD.h"
+#include "service/algorithm/IAlgorithmQuery.h"
 #include "service/task/ITaskQuery.h"
 #include "util/Log.h"
+#include "util/PassFlowOsdStore.h"
 
 namespace cosmo {
 
@@ -32,8 +34,20 @@ StreamViewerOverview::StreamViewerOverview(const std::string& channelId, const s
     // This class is only for algorithm task preview: overlays use relaxed frame alignment/time window,
     // cannot rely on demuxer IsLiveStream() (historically only rtsp:// was live, rtmp was treated as VOD).
     live_stream_ = true;
-    LOG_INFO("{} Alg:{} Task:{} live_stream_:true Init (channel demuxer reports live:{})", channel_id_,
-             alg_id_, task_id_, bLiveStream);
+    for (const auto& info :
+         service::ServiceRegistry::Instance().Get<service::IAlgorithmQuery>().GetPassFlowAlgorithms()) {
+        if (info.algorithmId == alg_id_) {
+            pass_flow_osd_ = true;
+            break;
+        }
+    }
+    if (pass_flow_osd_) {
+        auto last          = PassFlowOsdStore::Get(task_id_);
+        pass_flow_enter_   = last.first;
+        pass_flow_leave_   = last.second;
+    }
+    LOG_INFO("{} Alg:{} Task:{} live_stream_:true Init pass_flow_osd_:{} (channel demuxer reports live:{})",
+             channel_id_, alg_id_, task_id_, pass_flow_osd_, bLiveStream);
 }
 
 VideoFramePtr StreamViewerOverview::FrameCache(VideoFramePtr frame) {

@@ -10,6 +10,7 @@
 #include "flow/stream/StreamViewer.h"
 #include "media/PreviewPipelineMetrics.h"
 #include "service/camera/ICameraChannelQuery.h"
+#include "service/camera/ICameraDeviceCrud.h"
 #include "service/camera/ICameraTaskConfig.h"
 #include "service/detail/ServiceRegistry.h"
 #include "util/EnvUtil.h"
@@ -584,12 +585,13 @@ void LiveStreamServiceImpl::CheckAliveTasks() {
         std::unique_lock<std::shared_mutex> lock(mtx_);
         auto it = viewers_.begin();
         while (it != viewers_.end()) {
+            // Keep viewers alive: only stop when the publisher itself failed.
+            // Heartbeat timeout no longer destroys the stream so the OSD feed
+            // stays up for third-party RTSP/FLV pulls (ONVIF NVR).
             const bool publisher_failed = !(*it)->IsPublishReady();
-            const bool heartbeat_failed = (*it)->HeartBeatCheck();
-            if (publisher_failed || heartbeat_failed) {
-                LOG_INFO("viewer watchdog release: stream={}/{} viewers={} reason={}", (*it)->GetChannelId(),
-                         (*it)->GetAlgId(), (*it)->GetViewerNum(),
-                         publisher_failed ? "publisher-failed" : "heartbeat-timeout");
+            if (publisher_failed) {
+                LOG_INFO("viewer watchdog release: stream={}/{} viewers={} reason=publisher-failed",
+                         (*it)->GetChannelId(), (*it)->GetAlgId(), (*it)->GetViewerNum());
                 viewers_to_stop.push_back(*it);
                 it = viewers_.erase(it);
             } else {
@@ -599,6 +601,33 @@ void LiveStreamServiceImpl::CheckAliveTasks() {
     }
     for (auto& viewer : viewers_to_stop) {
         StopViewerAndReleasePreview(viewer);
+    }
+
+    // Always-on: ensure every enabled task has a publisher running.
+    EnsurePublishersLocked();
+}
+
+void LiveStreamServiceImpl::EnsurePublishersLocked() {
+    auto& registry = service::ServiceRegistry::Instance();
+    size_t total = 0;
+    auto  cams   = registry.Get<service::ICameraDeviceCrud>().Query("", -1, 1, 200, total);
+    for (const auto& cam : cams) {
+        for (const auto& task : cam.taskList) {
+            if (task.enable != 1 || task.algorithmId.empty()) {
+                continue;
+            }
+            std::shared_lock<std::shared_mutex> rlock(mtx_);
+            const bool exists = FindViewer(cam.videoChannelId, task.algorithmId) != viewers_.end();
+            rlock.unlock();
+            if (exists) {
+                continue;
+            }
+            LiveStream::LiveStreamInfo info;
+            auto err = ViewerCreate(cam.videoChannelId, task.algorithmId, info);
+            if (err == cosmo::util::ErrorEnum::Success) {
+                LOG_INFO("always-on publisher started: stream={}/{}", cam.videoChannelId, task.algorithmId);
+            }
+        }
     }
 }
 

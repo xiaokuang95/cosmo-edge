@@ -192,6 +192,22 @@ const system = {
       data,
     })
   },
+  // OSD 抓拍 apiKey 查询
+  boxQueryOsdApiKey(data) {
+    return request({
+      url: '/gtw/cwai/System/QueryOsdApiKey',
+      method: 'post',
+      data,
+    })
+  },
+  // OSD 抓拍 apiKey 重生成
+  boxRegenerateOsdApiKey(data) {
+    return request({
+      url: '/gtw/cwai/System/RegenerateOsdApiKey',
+      method: 'post',
+      data,
+    })
+  },
   // 修改密码
   boxModifyPassword(data) {
     return request({

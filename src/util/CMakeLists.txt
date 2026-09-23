@@ -16,6 +16,8 @@ add_library(cosmo_util OBJECT
     Log.cc               Log.h
     NToL.cc              NToL.h
     PeriodicTimer.cc     PeriodicTimer.h
+    OsdApiKey.cc         OsdApiKey.h
+    PassFlowOsdDraw.cc     PassFlowOsdDraw.h
     ResourceBudget.cc    ResourceBudget.h
     RtspUrlUtil.cc       RtspUrlUtil.h
     ScoreCalc.cc         ScoreCalc.h

@@ -70,5 +70,53 @@ namespace LiveStream {
 
     // Video heartbeat response
     struct MsgStreamStopSend : public MsgSendHead {};
+
+    // ── Third-party OSD snapshot API ──
+
+    struct MsgListChannelsRecv : public MsgRecvHead {};
+    struct MsgListChannelsAlgorithm {
+        std::string algorithmId;
+        std::string algorithmName;
+        int enableStatus{0};
+        friend void to_json(nlohmann::json& j, const MsgListChannelsAlgorithm& v);
+        friend void from_json(const nlohmann::json& j, MsgListChannelsAlgorithm& v);
+    };
+    struct MsgListChannelsRow {
+        std::string channelId;
+        std::string channelName;
+        std::vector<MsgListChannelsAlgorithm> algorithms;
+        friend void to_json(nlohmann::json& j, const MsgListChannelsRow& v);
+        friend void from_json(const nlohmann::json& j, MsgListChannelsRow& v);
+    };
+    struct MsgListChannelsResData {
+        std::vector<MsgListChannelsRow> rows;
+        friend void to_json(nlohmann::json& j, const MsgListChannelsResData& v);
+        friend void from_json(const nlohmann::json& j, MsgListChannelsResData& v);
+    };
+    struct MsgListChannelsSend : public MsgSendHead {
+        MsgListChannelsResData resData;
+    };
+    void to_json(nlohmann::json& j, const MsgListChannelsSend& v);
+    void from_json(const nlohmann::json& j, MsgListChannelsSend& v);
+
+    struct MsgGetOsdPictureRecv : public MsgRecvHead {
+        std::string channelId;
+        std::string algorithmId;
+        std::string base64{"1"};
+    };
+    void from_json(const nlohmann::json& j, MsgGetOsdPictureRecv& v);
+
+    struct MsgGetOsdPictureResData {
+        std::string url;
+        std::string fullUrl;
+        std::string pictureBase64;
+        friend void to_json(nlohmann::json& j, const MsgGetOsdPictureResData& v);
+        friend void from_json(const nlohmann::json& j, MsgGetOsdPictureResData& v);
+    };
+    struct MsgGetOsdPictureSend : public MsgSendHead {
+        MsgGetOsdPictureResData resData;
+    };
+    void to_json(nlohmann::json& j, const MsgGetOsdPictureSend& v);
+    void from_json(const nlohmann::json& j, MsgGetOsdPictureSend& v);
 }  // namespace LiveStream
 }  // namespace cosmo

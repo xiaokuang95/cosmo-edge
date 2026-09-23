@@ -441,6 +441,11 @@ bool HttpServer::PrepareRequestContext(struct evhttp_request* req, RequestDispat
     if (const auto* mtk = FindHeader(headers, "mtk")) {
         context.credential = mtk;
     }
+    if (context.credential.empty()) {
+        if (const auto* apiKey = FindHeader(headers, "apiKey")) {
+            context.credential = apiKey;
+        }
+    }
     is_log_request = context.uri.compare(0, kLogPrefix.size(), kLogPrefix) == 0;
     return true;
 }

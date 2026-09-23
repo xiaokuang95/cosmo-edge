@@ -116,6 +116,7 @@ private:
 
     void HandBestInfoPicture(CMsgOnEventsReq& msg, AlgDataPtr algData, DataAlarmUnit& alarmUnit);
     void HandPicture(CMsgOnEventsReq& msg, AlgDataPtr algData, DataAlarmUnit& alarmUnit);
+    void HandPassFlowPicture(CMsgOnEventsReq& msg, AlgDataPtr algData, DataAlarmUnit& alarmUnit);
     void UploadImage(CMsgOnEventsReq& msg, std::vector<uint8_t>& data, const std::string& url,
                      const std::string& sign);
 

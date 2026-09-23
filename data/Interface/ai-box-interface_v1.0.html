@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI Box HTTP 接口文档</title>
+  <title>HTTP 接口文档</title>
   <style>
     body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;color:#1f2933;line-height:1.65;background:#fff}main{max-width:1040px;margin:0 auto;padding:32px 24px 56px}h1{margin:0 0 18px;font-size:30px;border-bottom:1px solid #d9e2ec;padding-bottom:16px}h2{font-size:22px;border-left:4px solid #2563eb;padding-left:10px;margin:28px 0 12px}h3{font-size:18px;margin:24px 0 10px}table{width:100%;border-collapse:collapse;margin:12px 0 22px;font-size:14px}th,td{border:1px solid #d9e2ec;padding:8px 10px;text-align:left;vertical-align:top}th{background:#f8fafc;white-space:nowrap}code{background:#f5f7fa;border-radius:4px;padding:1px 4px;font-family:Consolas,monospace;font-size:13px}pre{background:#f5f7fa;border:1px solid #d9e2ec;border-radius:6px;padding:14px;overflow:auto;font-size:13px;line-height:1.5}.note{background:#fff7ed;border:1px solid #fed7aa;border-radius:6px;padding:10px 12px;margin:12px 0 20px}.muted{color:#65758b}
   </style>
 </head>
 <body><main>
-<h1 data-i18n="http.hero.title">AI Box HTTP 事件推送接口</h1>
-<p class="muted" data-i18n="http.hero.subtitle">适用于平台配置第三方 HTTP 地址后，由盒子向第三方系统推送算法事件。</p>
+<h1 data-i18n="http.hero.title">HTTP 事件推送接口</h1>
+<p class="muted" data-i18n="http.hero.subtitle">适用于平台配置第三方 HTTP 地址后，由平台向第三方系统推送算法事件。</p>
 
 <h2 data-i18n="http.section.basicInfo">基本信息</h2>
 <table><tbody>
@@ -19,7 +19,7 @@
 <tr><th>Content-Type</th><td>application/json</td></tr>
 <tr><th data-i18n="http.basic.successCriteria">成功判定</th><td data-i18n-html="http.basic.successCriteria.desc">HTTP 状态码为 200，且响应体建议为合法 JSON，例如 <code>{"resCode":1}</code>。</td></tr>
 </tbody></table>
-<p data-i18n="http.basic.note">HTTP 推送时，图片字段会转为 base64 字符串；视频字段为盒子本地文件路径。事件产生后视频文件可能还在生成，第三方系统收到事件后建议延迟几秒再读取视频。</p>
+<p data-i18n="http.basic.note">HTTP 推送时，图片字段会转为 base64 字符串；视频字段为平台本地文件路径。事件产生后视频文件可能还在生成，第三方系统收到事件后建议延迟几秒再读取视频。</p>
 
 <h2 data-i18n="http.section.requestSample">请求样例</h2>
 <pre><code>{
@@ -146,6 +146,83 @@
 
 <h2 data-i18n="http.section.responseSample">响应样例</h2>
 <pre><code>{"resCode":1,"resMsg":[]}</code></pre>
+
+<h2 data-i18n="http.section.passflowPush">人流过线推送</h2>
+<p data-i18n-html="http.passflowPush.desc">人流统计类算法（如 67954）改为过线才推，不再按「人数上报间隔」定时空包。本次增量 <code>enterOrgNum</code>/<code>leaveOrgNum</code> 至少有一个非 0 才会 POST。推送带过线瞬间 OSD 抓拍图（已叠加进入/离开文字和绊线），字段为 JPEG base64，三张图为同一帧。推送失败后与其他事件一样进入 24 小时离线重推。可在「数据对接」配置推送地址并勾选要推送的算法。</p>
+<pre><code>{
+  "algorithmId": "67954",
+  "algorithmName": "人流统计2",
+  "videoChannelId": "RT0000000000",
+  "isRetryMessage": false,
+  "orignalPicture": "/9j/4AAQSkZJRgABAQ...",
+  "fullPicture": "/9j/4AAQSkZJRgABAQ...",
+  "detectedPicture": "/9j/4AAQSkZJRgABAQ...",
+  "property": {
+    "people": {
+      "enterNumber": 3,
+      "leaveNumber": 0,
+      "enterOrgNum": 1,
+      "leaveOrgNum": 0
+    }
+  }
+}</code></pre>
+<table><tbody>
+<tr><td><code>enterOrgNum</code> / <code>leaveOrgNum</code></td><td data-i18n="http.passflow.field.enterOrgNum.desc">本次过线增量。进入为 1 表示刚进入 1 人。</td></tr>
+<tr><td><code>enterNumber</code></td><td data-i18n="http.passflow.field.enterNumber.desc">当前小时累计进入。</td></tr>
+<tr><td><code>leaveNumber</code></td><td data-i18n="http.passflow.field.leaveNumber.desc">当前小时累计离开。</td></tr>
+</tbody></table>
+
+<h2 data-i18n="http.section.osdSnapshot">OSD 叠加抓拍（主动拉取）</h2>
+<p data-i18n-html="http.osdSnapshot.desc">第三方系统用抓拍密钥（apiKey）主动拉取当前通道画面（含检测框、绊线、进出人数）。不要使用网页管理员账号。本系统只有一个 admin，第三方请求只带 Header <code>apiKey</code>，向设备管理员索取。密钥与管理员密码不是一回事。</p>
+<h3 data-i18n="http.osdSnapshot.listChannels">1. 查询通道和算法</h3>
+<table><tbody>
+<tr><th>请求地址</th><td><code>/gtw/cwai/LiveStream/ListChannels</code></td></tr>
+<tr><th>请求方法</th><td>POST</td></tr>
+<tr><th>Header</th><td><code>apiKey: &lt;API_KEY&gt;</code></td></tr>
+</tbody></table>
+<pre><code>{}</code></pre>
+<pre><code>{
+  "resCode": 1,
+  "resData": {
+    "rows": [
+      {
+        "channelId": "RT0000000000",
+        "channelName": "人流统计",
+        "algorithms": [
+          {"algorithmId": "92113", "algorithmName": "人流统计", "enableStatus": 1}
+        ]
+      }
+    ]
+  },
+  "resMsg": []
+}</code></pre>
+<h3 data-i18n="http.osdSnapshot.snapshot">2. 抓拍</h3>
+<table><tbody>
+<tr><th>请求地址</th><td><code>/gtw/cwai/LiveStream/GetOsdPicture</code></td></tr>
+<tr><th>请求方法</th><td>POST（亦支持 GET）</td></tr>
+<tr><th>Content-Type</th><td>application/json</td></tr>
+<tr><th>Header</th><td><code>apiKey: &lt;API_KEY&gt;</code></td></tr>
+</tbody></table>
+<pre><code>{
+  "channelId": "RT0000000000",
+  "algorithmId": "92113"
+}</code></pre>
+<table><thead><tr><th data-i18n="http.rootTable.field">字段</th><th data-i18n="http.rootTable.type">类型</th><th data-i18n="http.rootTable.desc">说明</th></tr></thead><tbody>
+<tr><td><code>channelId</code></td><td>string</td><td data-i18n="http.osd.field.channelId.desc">通道 ID，来自 ListChannels。</td></tr>
+<tr><td><code>algorithmId</code></td><td>string</td><td data-i18n="http.osd.field.algorithmId.desc">算法 ID，选 enableStatus=1 的项。</td></tr>
+<tr><td><code>base64</code></td><td>string</td><td data-i18n="http.osd.field.base64.desc">可选。默认返回 <code>pictureBase64</code>（JPEG base64）；传 <code>"0"</code> 则只返回 <code>url</code>/<code>fullUrl</code>，不返回 base64。</td></tr>
+</tbody></table>
+<pre><code>{
+  "resCode": 1,
+  "resData": {
+    "url": "/web/2026/09/22/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.jpg",
+    "fullUrl": "http://&lt;设备 IP&gt;/web/2026/09/22/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.jpg",
+    "pictureBase64": "/9j/4AAQSkZJRgABAQ..."
+  },
+  "resMsg": []
+}</code></pre>
+<p data-i18n-html="http.osdSnapshot.snapshotNote">传 <code>base64:"0"</code> 则只返回 URL。只要 JPEG 文件时用 GET 打开 <code>fullUrl</code>。</p>
+
 </main>
 <script src="i18n/static-docs.js"></script>
 </body></html>

@@ -195,6 +195,8 @@ void ApiRouter::RegisterSystemRoutes() {
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, ResetDevRestartParam);
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, ModifyDevRestartParam);
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, QueryDevRestartParam);
+    ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, QueryOsdApiKey);
+    ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, RegenerateOsdApiKey);
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, ResetSystem);
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, ExportFile);
     ROUTE("/gtw/cwai/System/", kAuth, system_handler_, System, CheckUpgradeSpace);
@@ -291,6 +293,8 @@ void ApiRouter::RegisterLiveStreamRoutes() {
     ROUTE("/gtw/cwai/LiveStream/", kAuth, live_stream_handler_, LiveStream, RequestLiveStream);
     ROUTE("/gtw/cwai/LiveStream/", kAuth, live_stream_handler_, LiveStream, StreamKeepAlive);
     ROUTE("/gtw/cwai/LiveStream/", kAuth, live_stream_handler_, LiveStream, StreamStop);
+    ROUTE_CONTEXT("/gtw/cwai/LiveStream/", kNoAuth, live_stream_handler_, LiveStream, ListChannels);
+    ROUTE_CONTEXT("/gtw/cwai/LiveStream/", kNoAuth, live_stream_handler_, LiveStream, GetOsdPicture);
 }
 
 void ApiRouter::RegisterOnboardingRoutes() {

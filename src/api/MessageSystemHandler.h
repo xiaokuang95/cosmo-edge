@@ -13,6 +13,7 @@
 #include "service/system/dto/SystemNetworkDto.h"
 #include "service/system/dto/SystemParamDto.h"
 #include "service/system/dto/SystemTimeDto.h"
+#include "service/system/dto/SystemOsdDto.h"
 #include "util/IRequestDispatcher.h"
 
 namespace cosmo::service {
@@ -70,7 +71,10 @@ public:
     System::MsgResetDevRestartParamSend Handle(System::MsgResetDevRestartParamRecv&& data,
                                                std::error_condition& errc);  //
 
-    System::MsgResetSystemSend Handle(System::MsgResetSystemRecv&& data, std::error_condition& errc);  //
+    System::MsgResetSystemSend Handle(System::MsgResetSystemRecv&& data, std::error_condition& errc);
+    System::MsgQueryOsdApiKeySend Handle(System::MsgQueryOsdApiKeyRecv&& data, std::error_condition& errc);
+    System::MsgRegenerateOsdApiKeySend Handle(System::MsgRegenerateOsdApiKeyRecv&& data,
+                                              std::error_condition& errc);  //
 
     System::MsgExportFileSend Handle(System::MsgExportFileRecv&& data, std::error_condition& errc);  //
 

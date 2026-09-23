@@ -79,8 +79,9 @@ void NetworkConfigServiceImpl::SetToDefault() {
     std::lock_guard<std::shared_mutex> lock(mtx_);
     net_card_info_.main.eth_name = platform::kNetworkMainEthName;
     net_card_info_.main.dhcp     = 0;
-    net_card_info_.main.ip_addr  = "192.168.100.1";
+    net_card_info_.main.ip_addr  = "192.168.2.27";
     net_card_info_.main.net_mask = "255.255.255.0";
+    net_card_info_.main.gateway  = "192.168.2.1";
 
     net_card_info_.sub.eth_name = platform::kNetworkSubEthName;
     net_card_info_.sub.dhcp     = 0;

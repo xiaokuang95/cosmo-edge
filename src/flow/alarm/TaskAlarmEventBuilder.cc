@@ -11,16 +11,24 @@
 
 #include "flow/alarm/AlarmBatch.h"
 #include "flow/alarm/TaskAlarm.h"
+#include "util/PassFlowOsdStore.h"
 #include "flow/alarm/TaskAlarmInternalTypes.h"
 #include "service/detail/ServiceRegistry.h"
 #include "service/event/IAlarmRecordService.h"
 #include "service/event/IEventNotifier.h"
 #include "service/infra/ILinkageService.h"
+#include "service/media/IVideoFrameOSD.h"
+#include "service/media/IVideoFrameCodec.h"
+#include "service/task/ITaskQuery.h"
 #include "service/system/IConfigReadService.h"
 #include "util/JsonStructUtil.h"
 #include "util/Log.h"
 #include "util/PathUtil.h"
 #include "util/TimeUtil.h"
+#include "util/PassFlowOsdDraw.h"
+#include "util/PassFlowOsdStore.h"
+#include "service/camera/ICameraChannelQuery.h"
+#include "util/FileUtil.h"
 #include "util/UuidUtil.h"
 
 namespace chrono = std::chrono;
@@ -157,6 +165,43 @@ void TaskAlarm::AttachAlarmMedia(CMsgOnEventsReq& eventData, const AlgDataPtr& a
           (OnEventsPropertyType::Car == m_propertyType))) {
         HandPicture(eventData, algData, alarmUnit);
     }
+
+    // Pass-flow (people/car): capture OSD tripwire + 进入/离开 picture.
+    if ((OnEventsPropertyType::People == m_propertyType) ||
+        (OnEventsPropertyType::Car == m_propertyType)) {
+        HandPassFlowPicture(eventData, algData, alarmUnit);
+    }
+}
+
+// Draw tripwires + cumulative 进入/离开 onto the current frame and save as the
+// event's full/orig/detect picture (same frame, per interface doc).
+void TaskAlarm::HandPassFlowPicture(CMsgOnEventsReq& msg, AlgDataPtr algData,
+                                    DataAlarmUnit& alarmUnit) {
+    auto img = service::ServiceRegistry::Instance().Get<service::IVideoFrameOSD>().CopyJpegSrcFrame(
+        algData->chanDataDec.frame);
+    if (!::VideoFrameValid(img)) {
+        return;
+    }
+    auto totals = ::PassFlowOsdStore::Get(task_id);
+    cosmo::MsgTaskConfig params;
+    service::ServiceRegistry::Instance().Get<service::ITaskQuery>().GetTaskParam(GetChannel(), task_id, params);
+    if (!cosmo::PassFlowOsdDraw(img, params.areas, totals.first, totals.second)) {
+        return;
+    }
+    auto jpegData = service::ServiceRegistry::Instance().Get<service::IVideoFrameCodec>().EncodeJpeg(img);
+    if (jpegData.empty()) {
+        return;
+    }
+    const std::string localDir = cosmo::path::GetEventPath(msg.itimestamp);
+    std::filesystem::create_directories(localDir);
+    const std::string full = (std::filesystem::path(localDir) / (msg.messageId + "_full.jpg")).string();
+    if (!cosmo::util::WriteFile(full, jpegData.data(), jpegData.size())) {
+        return;
+    }
+    const std::string name = msg.messageId + "_full.jpg";
+    msg.fullPicture        = name;
+    msg.orignalPicture     = name;
+    msg.detectedPicture    = name;
 }
 
 // ---------------------------------------------------------------------------
@@ -408,12 +453,10 @@ bool TaskAlarm::FillAlarmData(AlgDataPtr algData) {
 
         // Record and update pass-flow totals
         auto recAlarmData = makeRecAlarmData(alarmUnit);
-        if (OnEventsPropertyType::People == m_propertyType) {
+        if (OnEventsPropertyType::People == m_propertyType || OnEventsPropertyType::Car == m_propertyType) {
             recAlarmData.enterTotalCount = alarmUnit.passFlowData.enterTotalNum;
             recAlarmData.leaveTotalCount = alarmUnit.passFlowData.leaveTotalNum;
-        } else if (OnEventsPropertyType::Car == m_propertyType) {
-            recAlarmData.enterTotalCount = alarmUnit.passFlowData.enterTotalNum;
-            recAlarmData.leaveTotalCount = alarmUnit.passFlowData.leaveTotalNum;
+            PassFlowOsdStore::Put(task_id, recAlarmData.enterTotalCount, recAlarmData.leaveTotalCount);
         }
 
         recAlarmData.alarm = true;
@@ -428,7 +471,15 @@ bool TaskAlarm::FillAlarmData(AlgDataPtr algData) {
         }
         eventData.category = GetAlgCategory();
 
-        DispatchAlarmEvent(eventData);
+        // Pass-flow: only push over-line events (at least one increment non-zero).
+        bool skipPush = false;
+        if ((OnEventsPropertyType::People == m_propertyType) ||
+            (OnEventsPropertyType::Car == m_propertyType)) {
+            skipPush = (alarmUnit.passFlowData.enterOrgNum == 0) && (alarmUnit.passFlowData.leaveOrgNum == 0);
+        }
+        if (!skipPush) {
+            DispatchAlarmEvent(eventData);
+        }
     }
     return true;
 }

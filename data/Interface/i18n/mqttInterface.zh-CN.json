@@ -1,7 +1,7 @@
 {
-  "docTitle": "AI Box MQTT 接口文档",
-  "mqtt.hero.title": "AI Box MQTT 协议接入",
-  "mqtt.hero.subtitle": "适用于盒子通过 MQTT 与平台进行注册、心跳和业务透传交互。",
+  "docTitle": "MQTT 接口文档",
+  "mqtt.hero.title": "MQTT 协议接入",
+  "mqtt.hero.subtitle": "适用于平台通过 MQTT 与平台进行注册、心跳和业务透传交互。",
 
   "mqtt.section.connectionAuth": "连接认证",
   "mqtt.auth.th.mode": "模式",
