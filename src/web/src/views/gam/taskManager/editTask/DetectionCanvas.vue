@@ -564,24 +564,41 @@ const pointInRect = (x, y, point) => {
   )
 }
 
-// OSD preview: pass-flow enter/leave counters at the configured position/size,
-// scaled from the 1280x720 frame coordinates to the canvas size.
+// OSD preview: pass-flow enter/leave counters at the configured position/size.
+// Uses the same SourceHanSans font the engine renders with (stb_truetype),
+// so the preview matches the on-video OSD closely.
+let osdFontReady = null
+const ensureOsdFont = () => {
+  if (osdFontReady || typeof FontFace === 'undefined') return osdFontReady
+  const face = new FontFace('OsdHanSans', 'url(/font/SOURCEHANSANSCN-REGULAR.OTF)')
+  osdFontReady = face.load().then((f) => {
+    document.fonts.add(f)
+    redrawCanvas()
+  }).catch(() => {})
+  return osdFontReady
+}
+
 const drawOsdPreview = (context) => {
   const cfg = props.osdPreview
   if (!context || !cfg || !cfg.enterLabel) return
   const canvas = canvasRef.value
   if (!canvas) return
+  ensureOsdFont()
   const scale = canvas.width / 1280
-  const fs = Math.max(8, Math.round((cfg.fontSize || 22) * scale))
-  const lineGap = fs + Math.max(2, Math.round(18 * scale))
+  // engine stb_truetype renders the em-square at fontSize plus a 1px dilation
+  // (visual bold) and a 1px outline — emulate with a slightly larger, bolder face
+  const fs = Math.max(8, (cfg.fontSize || 22) * scale * 1.15)
+  const lineGap = fs + 18 * scale
   const x = Math.max(4, Math.round(canvas.width * (cfg.xRatio ?? 0.7)))
-  const y = Math.max(fs + 2, Math.round(canvas.height * (cfg.yRatio ?? 0.6)))
-  context.font = `${fs}px Arial`
+  // engine y is the glyph TOP; canvas fillText y is the baseline
+  const y = Math.max(fs + 2, canvas.height * (cfg.yRatio ?? 0.6)) + fs * 0.85
+  context.font = `600 ${fs}px OsdHanSans, "Microsoft YaHei", "PingFang SC", sans-serif`
   context.textAlign = 'left'
+  context.textBaseline = 'alphabetic'
   ;[`${cfg.enterLabel} 0`, `${cfg.leaveLabel} 0`].forEach((txt, i) => {
     const ly = y + i * lineGap
-    context.lineWidth = Math.max(2, Math.round(fs / 8))
-    context.strokeStyle = 'rgba(0,0,0,0.85)'
+    context.lineWidth = Math.max(1.5, fs / 8)
+    context.strokeStyle = 'rgba(0,0,0,0.9)'
     context.strokeText(txt, x, ly)
     context.fillStyle = cfg.color || 'rgb(220,231,255)'
     context.fillText(txt, x, ly)

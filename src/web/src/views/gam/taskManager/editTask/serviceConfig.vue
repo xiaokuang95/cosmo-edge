@@ -1122,7 +1122,7 @@ const saveOsdConfig = () => {
 watch(
   activeName,
   (val) => {
-    if (val === "params") {
+    if (val === "params" || val === "area") {
       queryOsdConfig()
     }
   },
