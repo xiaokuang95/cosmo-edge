@@ -65,6 +65,29 @@
                   <el-button style="margin-right:15px;" @click="parameterVisible = true">{{ t('action.reset') }}</el-button>
                   <el-button type="primary" @click="batch">{{ t('glossary.batchApply') }}</el-button>
                 </div>
+
+                <div class="osd-display" style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed #d7dce5;">
+                  <el-form label-position="right" :label-width="currentLocale === 'en-US' ? '170px' : '120px'">
+                    <el-form-item :label="t('systemManage.osdEnterLabel')">
+                      <el-input v-model="osdConfig.enterLabel" class="width200" size="small" maxlength="16" />
+                    </el-form-item>
+                    <el-form-item :label="t('systemManage.osdLeaveLabel')">
+                      <el-input v-model="osdConfig.leaveLabel" class="width200" size="small" maxlength="16" />
+                    </el-form-item>
+                    <el-form-item :label="t('systemManage.osdPosX')">
+                      <el-slider v-model="osdConfig.xRatio" :min="0" :max="1" :step="0.05" style="width: 200px" />
+                    </el-form-item>
+                    <el-form-item :label="t('systemManage.osdPosY')">
+                      <el-slider v-model="osdConfig.yRatio" :min="0" :max="1" :step="0.05" style="width: 200px" />
+                    </el-form-item>
+                    <el-form-item :label="t('systemManage.osdFontSize')">
+                      <el-slider v-model="osdConfig.fontSize" :min="10" :max="64" :step="1" style="width: 200px" />
+                    </el-form-item>
+                  </el-form>
+                  <div style="margin-left:160px;">
+                    <el-button type="primary" size="small" @click="saveOsdConfig">{{ t('action.save') }}</el-button>
+                  </div>
+                </div>
               </el-tab-pane>
 
               <el-tab-pane :label="t('glossary.runningStrategy')" name="strategy">
@@ -1044,6 +1067,39 @@ const resetParameter = () => {
 const LargeModelAlgorithmConfiguration = () => {
   window.open(`/sop/#/sop/modelScreen`, '_blank')
 }
+
+const osdConfig = ref({ enterLabel: '', leaveLabel: '', xRatio: 0.7, yRatio: 0.6, fontSize: 22 })
+
+const queryOsdConfig = () => {
+  if (typeof proxy.$API.boxQueryOsdConfig !== 'function') {
+    return
+  }
+  proxy.$API.boxQueryOsdConfig().then((res) => {
+    const d = res.resData || {}
+    osdConfig.value = {
+      enterLabel: d.enterLabel || '进入',
+      leaveLabel: d.leaveLabel || '离开',
+      xRatio: Number(d.xRatio ?? 0.7),
+      yRatio: Number(d.yRatio ?? 0.6),
+      fontSize: Number(d.fontSize ?? 22)
+    }
+  })
+}
+
+const saveOsdConfig = () => {
+  if (typeof proxy.$API.boxSetOsdConfig !== 'function') {
+    return
+  }
+  proxy.$API.boxSetOsdConfig({ ...osdConfig.value }).then(() => {
+    ElMessage.success(t('common.operationSucceeded'))
+  })
+}
+
+watch(activeName, (val) => {
+  if (val === params) {
+    queryOsdConfig()
+  }
+})
 
 onMounted(() => {
   init()
