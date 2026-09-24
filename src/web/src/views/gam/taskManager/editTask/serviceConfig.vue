@@ -48,7 +48,7 @@
             </template>
             <el-tabs class="tabbgcolor" v-model.trim="activeName" type="card" style="height: 100%">
               <el-tab-pane :label="t('glossary.detectionArea')" name="area">
-                <area-setting v-if="config && config.channelId" ref="areaSettingRef" v-model:config="config" :algorithmCode="algorithmCode"></area-setting>
+                <area-setting v-if="config && config.channelId" ref="areaSettingRef" v-model:config="config" :algorithmCode="algorithmCode" :activeName="activeName"></area-setting>
               </el-tab-pane>
 
               <el-tab-pane :label="t('glossary.parameterSettings')" name="params">
@@ -84,7 +84,6 @@
                 <div class="osd-action-row" :style="{ marginLeft: osdFormLabelWidth }">
                   <el-button @click="parameterVisible = true">{{ t('action.reset') }}</el-button>
                   <el-button type="primary" @click="batch">{{ t('glossary.batchApply') }}</el-button>
-                  <el-button type="primary" @click="saveOsdConfig">{{ t('systemManage.saveOsd') }}</el-button>
                 </div>
               </el-tab-pane>
 
@@ -985,12 +984,18 @@ const newSave = async (skipRefresh = false) => {
 
   parameterData.value = params
 
-  return proxy.$API.saveOrUpdate(params).then((res) => {
-    proxy.$message.success(t('common.saveSucceeded'))
-    if (!skipRefresh) {
-      getServeTypes()
+  return proxy.$API.saveOrUpdate(params).then(() => {
+    const finish = () => {
+      proxy.$message.success(t('common.saveSucceeded'))
+      if (!skipRefresh) {
+        getServeTypes()
+      }
+      return true
     }
-    return true
+    if (typeof proxy.$API.boxSetOsdConfig !== 'function') {
+      return finish()
+    }
+    return proxy.$API.boxSetOsdConfig({ ...osdConfig.value }).then(finish)
   })
 }
 
@@ -1110,15 +1115,6 @@ const queryOsdConfig = () => {
   })
 }
 
-const saveOsdConfig = () => {
-  if (typeof proxy.$API.boxSetOsdConfig !== 'function') {
-    return
-  }
-  proxy.$API.boxSetOsdConfig({ ...osdConfig.value }).then(() => {
-    ElMessage.success(t('common.operationSucceeded'))
-  })
-}
-
 watch(
   activeName,
   (val) => {
@@ -1188,9 +1184,19 @@ onMounted(() => {
     overflow: auto;
   }
 
+  :deep(.el-tabs__content) {
+    overflow: auto;
+    height: calc(100% - 40px);
+  }
+
   .el-tab-pane {
-    overflow-x: scroll;
+    overflow: visible;
     padding-bottom: 20px;
+  }
+
+  :deep(.param-body) {
+    max-height: none;
+    overflow: visible;
   }
 }
 
@@ -1340,10 +1346,19 @@ onMounted(() => {
   text-align: center;
 }
 
+.osd-display {
+  :deep(.el-slider),
+  :deep(.el-input) {
+    max-width: 210px;
+    width: min(210px, 100%);
+  }
+}
+
 .osd-action-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  margin-bottom: 12px;
 }
 
 .osd-action-row .el-button {

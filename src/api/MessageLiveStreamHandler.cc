@@ -14,6 +14,8 @@
 #include "service/task/ITaskQuery.h"
 #include "util/OsdApiKey.h"
 #include "util/PassFlowOsdStore.h"
+#include "util/PassFlowOsdDraw.h"
+#include "service/network/IAuthService.h"
 #include "util/IRequestDispatcher.h"
 #include "util/UuidUtil.h"
 #include "util/TimeUtil.h"
@@ -58,7 +60,15 @@ LiveStream::MsgStreamStopSend MessageLiveStreamHandler::Handle(LiveStream::MsgSt
 
 namespace {
     bool OsdAuthValid(const std::string& presented) {
-        return cosmo::OsdApiKey::Valid(presented);
+        if (cosmo::OsdApiKey::Valid(presented)) {
+            return true;
+        }
+        if (presented.empty()) {
+            return false;
+        }
+        auto& registry = cosmo::service::ServiceRegistry::Instance();
+        return registry.Has<cosmo::service::IAuthService>() &&
+               registry.Get<cosmo::service::IAuthService>().IsValidToken(presented);
     }
 
     void SetOsdAuthError(cosmo::MsgSendHead& ret, std::error_condition& errc) {
@@ -149,42 +159,11 @@ LiveStream::MsgGetOsdPictureSend MessageLiveStreamHandler::Handle(LiveStream::Ms
         return retData;
     }
 
-    // Draw tripwires + enter/leave OSD like the live preview.
     const std::string taskId = cosmo::ChannelAlgIdToTaskId(data.channelId, data.algorithmId);
     cosmo::MsgTaskConfig params;
     registry.Get<service::ITaskQuery>().GetTaskParam(data.channelId, taskId, params);
-    auto& osd = registry.Get<service::IVideoFrameOSD>();
-    if (osd.BeginOSD(frame)) {
-        struct Guard {
-            service::IVideoFrameOSD& o;
-            ~Guard() { o.EndOSD(); }
-        } g{osd};
-        media::Color lineColor{0, 0, 0xff};
-        for (const auto& area : params.areas) {
-            auto lines = cosmo::GetAreaLines(area, frame->GetWidth(), frame->GetHeight());
-            if (!lines.empty()) {
-                osd.OSDDrawLines(lines, lineColor, 3);
-            }
-        }
-        bool isPassFlow = false;
-        for (const auto& info : registry.Get<service::IAlgorithmQuery>().GetPassFlowAlgorithms()) {
-            if (info.algorithmId == data.algorithmId) {
-                isPassFlow = true;
-                break;
-            }
-        }
-        if (isPassFlow) {
-            auto totals = ::PassFlowOsdStore::Get(taskId);
-            const int w = frame->GetWidth();
-            const int h = frame->GetHeight();
-            const int x = std::max(10, w * 7 / 10);
-            const int y = std::max(60, (h + 60) / 2);
-            osd.OSDDrawTextEx(x, y, "进入 " + std::to_string(totals.first), {220, 231, 255}, 22,
-                              {0, 0, 0}, 0, true, 0);
-            osd.OSDDrawTextEx(x, y + 40, "离开 " + std::to_string(totals.second), {220, 231, 255}, 22,
-                              {0, 0, 0}, 0, true, 0);
-        }
-    }
+    auto totals = ::PassFlowOsdStore::Get(taskId);
+    cosmo::PassFlowOsdDraw(frame, params.areas, totals.first, totals.second);
 
     auto jpeg = registry.Get<service::ICameraChannelQuery>().EncodeJpeg(frame);
     if (jpeg.empty()) {

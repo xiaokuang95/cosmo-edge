@@ -208,6 +208,15 @@ const system = {
       data,
     })
   },
+  // OSD 叠加抓拍（apiKey 鉴权）
+  boxGetOsdPicture(data, apiKey) {
+    return request({
+      url: '/gtw/cwai/LiveStream/GetOsdPicture',
+      method: 'post',
+      data,
+      headers: { apiKey },
+    })
+  },
   // 人流OSD外观 查询
   boxQueryOsdConfig(data) {
     return request({

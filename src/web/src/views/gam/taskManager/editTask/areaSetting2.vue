@@ -147,7 +147,11 @@ const props = defineProps({
       areasTitle: []
     })
   },
-  algorithmCode: [String, Number]
+  algorithmCode: [String, Number],
+  activeName: {
+    type: String,
+    default: ""
+  }
 })
 
 const emit = defineEmits(['update:config'])
@@ -172,6 +176,13 @@ watch(osdConfigLive || ref(null), (val) => {
     osdPreview.value = { ...val }
   }
 }, { deep: true })
+
+// refresh the OSD snapshot whenever the detection-area tab becomes visible
+watch(() => props.activeName, (val) => {
+  if (val === 'area') {
+    getImage(true)
+  }
+})
 const imgSrc = ref('')
 const isLoadingImage = ref(false) // 添加加载状态
 const lastChannelId = ref('') // 缓存上次的channelId
@@ -296,9 +307,12 @@ const getImage = (forceRefresh = false) => {
     isLoadingImage.value = true
     lastChannelId.value = props.config.channelId
     
-    proxy.$API.boxRecaptureImage({ videoChannelId: props.config.channelId }).then((res) => {
+    proxy.$API.boxGetOsdPicture({
+      channelId: props.config.channelId,
+      algorithmId: String(props.algorithmCode || '')
+    }).then((res) => {
       const { resData } = res
-      imgSrc.value = resData.url
+      imgSrc.value = resData.fullUrl || resData.url
     }).catch(() => {
       imgSrc.value = CatchPhoto
     }).finally(() => {
