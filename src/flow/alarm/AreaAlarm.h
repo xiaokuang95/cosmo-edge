@@ -105,6 +105,7 @@ struct BAAreaAlarmParam {
     uint64_t area_duration_time_type{1};                       // Area stay duration coefficient
     BreakLineType break_line_type{BreakLineType::kUnOrdered};  // Line crossing type
     int tripping_wire_type{1};                                 // Line crossing count
+    bool dual_line_and{false};  // pass-flow: both lines in order before +1
     TargetCalcType target_calc_type{
         TargetCalcType::kIn};  // Target count type for area/people counting algorithms
     RetroDirect retro_direct{RetroDirect::RetroDirectNorth};  // Forward direction
@@ -196,6 +197,11 @@ private:
     // Calculate target line crossing count
     void PassFlowCount(PassFlowAreaTargets& areaData, const std::deque<AiDetectRstEl>& history,
                        const std::string& areaId);
+    bool UseDualLineAnd() const;
+    PassFlowAreaTargets* DualLinePrimary();
+    void ResolveDualLineIds(std::string& checkId, std::string& shaftId);
+    void DualLineCount(PassFlowAreaTargets& areaData, const std::deque<AiDetectRstEl>& history);
+    void DualLineClearTrackHistory(unsigned trackId);
     // Calculate area quantity for traffic/area counting algorithms
     void HandAreaTargetCount(AlgDataPtr algData, DataDetTrackClassifyPtr input);
 

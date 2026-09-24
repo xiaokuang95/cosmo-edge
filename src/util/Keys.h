@@ -48,6 +48,7 @@ inline constexpr std::string_view TARGET_CALC_TYPE{"targetCalcType"};
 inline constexpr std::string_view RETRO_DIRECT{"retroDirect"};
 inline constexpr std::string_view RETRO_DISTANCE{"retroDistance"};
 inline constexpr std::string_view DIRECTION_TYPE{"directionType"};
+inline constexpr std::string_view DUAL_LINE_AND{"dualLineAnd"};
 
 namespace alg {
     inline constexpr std::string_view ACTION{"configObject"};

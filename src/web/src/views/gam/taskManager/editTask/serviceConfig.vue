@@ -80,6 +80,10 @@
                   <el-form-item :label="t('systemManage.osdColor')">
                     <el-color-picker v-model="osdConfig.color" size="small" />
                   </el-form-item>
+                  <el-form-item v-if="String(algorithmCode) === '92113'" :label="t('systemManage.dualLineAnd')">
+                    <el-switch v-model="dualLineAnd" />
+                    <span class="osd-dual-tip">{{ t('systemManage.dualLineAndTip') }}</span>
+                  </el-form-item>
                 </el-form>
                 <div class="osd-action-row" :style="{ marginLeft: osdFormLabelWidth }">
                   <el-button @click="parameterVisible = true">{{ t('action.reset') }}</el-button>
@@ -591,6 +595,9 @@ const getSelectConfig = () => {
       }
       config.value.regionType = resData.algorithmMetadata.regionType
       config.value.maxAreaCount = resData.algorithmMetadata.maxAreaCount || 4
+      if (String(algorithmId.value) === '92113' || String(algorithmCode.value) === '92113') {
+        config.value.maxAreaCount = Math.max(Number(config.value.maxAreaCount) || 0, 2)
+      }
       config.value.defaultFullScreen =
         resData.algorithmMetadata.defaultFullScreen
 
@@ -611,6 +618,7 @@ const getSelectConfig = () => {
       )
       const isVideoPlayback =
         joinTypeS.value == -1 || joinTypeEdits.value == -1
+      dualLineAnd.value = String(taskParamByKey.get('param.dualLineAnd') ?? '0') !== '0'
       const hasSavedVideoRepeatCount = taskParamByKey.has(
         'param.videoRepeatCount'
       )
@@ -810,7 +818,12 @@ const newSave = async (skipRefresh = false) => {
       algorithmId.value !== editingAlgorithmId || config.value.channelId !== editingChannelId) {
     return false
   }
-  config.value.taskParam = result.params
+  if (dualLineAnd.value && (config.value.taskAreaRows || []).length < 2) {
+    proxy.$message.error(t('validate.dualLineRequireTwo'))
+    return false
+  }
+  config.value.taskParam = (result.params || []).filter((p) => p.key !== 'param.dualLineAnd')
+  config.value.taskParam.push({ key: 'param.dualLineAnd', value: dualLineAnd.value ? '1' : '0' })
 
   let params = {
     channelId: config.value.channelId,
@@ -1072,6 +1085,7 @@ const LargeModelAlgorithmConfiguration = () => {
 }
 
 const osdConfig = ref({ enterLabel: '', leaveLabel: '', xRatio: 0.7, yRatio: 0.6, fontSize: 22, color: '#DCE7FF' })
+const dualLineAnd = ref(false)
 // shared with the detection-area tab so its canvas preview follows saves
 provide('osdConfigLive', osdConfig)
 
@@ -1352,6 +1366,11 @@ onMounted(() => {
     max-width: 210px;
     width: min(210px, 100%);
   }
+}
+.osd-dual-tip {
+  margin-left: 8px;
+  color: #909399;
+  font-size: 12px;
 }
 
 .osd-action-row {

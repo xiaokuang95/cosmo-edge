@@ -155,6 +155,13 @@ static const std::vector<std::pair<std::vector<std::string_view>, ParamHandler>>
          return true;
      }},
 
+    // dualLineAnd: both tripwires in order before pass-flow +1
+    {{key::DUAL_LINE_AND},
+     [](const std::string& v, BAAreaAlarmParam& p) -> bool {
+         p.dual_line_and = (v != "0" && !v.empty());
+         return true;
+     }},
+
     // targetCalcType
     {{key::TARGET_CALC_TYPE},
      [](const std::string& v, BAAreaAlarmParam& p) -> bool {
