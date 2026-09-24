@@ -14,7 +14,12 @@ set(MP4V2_CONFIGURE_ARGS
 )
 
 if(COSMO_TARGET_ARCH STREQUAL "aarch64")
-    list(APPEND MP4V2_CONFIGURE_ARGS --build=aarch64-linux-gnu --host=aarch64-linux-gnu)
+    list(APPEND MP4V2_CONFIGURE_ARGS --host=aarch64-linux-gnu)
+    # Native aarch64 (board) must set --build too; x86	o aarch64 CI must not,
+    # or configure tries to run aarch64 test binaries on the host.
+    if(NOT CMAKE_CROSSCOMPILING)
+        list(APPEND MP4V2_CONFIGURE_ARGS --build=aarch64-linux-gnu)
+    endif()
 endif()
 
 ExternalProject_Add(
