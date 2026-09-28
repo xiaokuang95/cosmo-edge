@@ -194,10 +194,15 @@ void AreaAlarm::DualLineCount(PassFlowAreaTargets& areaData, const std::deque<Ai
 
 void AreaAlarm::HandPassFlowCalc() {
     if (UseDualLineAnd()) {
+        // Tripwires have no polygon: TargetInArea is always false and used to
+        // wipe history every frame, so seq never reached 2. Count as soon as
+        // both lines appear, then clear.
         auto* primary = DualLinePrimary();
         for (auto& targetPair : primary->target_map) {
-            if (!TargetInArea(targetPair.second.target, primary->associated_area)) {
-                DualLineCount(*primary, targetPair.second.history);
+            const auto e0 = primary->enter_org_num;
+            const auto l0 = primary->leave_org_num;
+            DualLineCount(*primary, targetPair.second.history);
+            if (primary->enter_org_num != e0 || primary->leave_org_num != l0) {
                 DualLineClearTrackHistory(targetPair.first);
             }
         }
