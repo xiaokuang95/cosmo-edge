@@ -67,6 +67,7 @@ struct AreaAlarm::PassFlowTrackIdData {
     bool detected{false};
     AiDetectRstEl target;
     std::deque<AiDetectRstEl> history;
+    std::chrono::steady_clock::time_point last_count_tp{};
 };
 
 struct AreaAlarm::PassFlowAreaTargets {

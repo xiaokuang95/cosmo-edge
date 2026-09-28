@@ -101,9 +101,20 @@ void AreaAlarm::PassFlowCount(PassFlowAreaTargets& areaData, const std::deque<Ai
         LOG_WARN("{}[{}] {}/{} trackId:{} Have {} Pass Line :{}", kTag, task_id, action_info_.actionName,
                  action_info_.flowActionId, trackId, passCount, areaId);
     }
+    if (passCount == 0 || trackId < 0) {
+        return;
+    }
+    // ponytail: 2s per-track debounce; box jitter on the line was counting 3 people as 5/4.
+    constexpr auto kDebounce = std::chrono::seconds(2);
+    auto now                 = std::chrono::steady_clock::now();
+    auto& td                 = areaData.target_map[static_cast<unsigned>(trackId)];
+    if (td.last_count_tp.time_since_epoch().count() != 0 && now - td.last_count_tp < kDebounce) {
+        return;
+    }
+    td.last_count_tp = now;
     if (passCount > 0) {
         areaData.enter_org_num += 1;
-    } else if (passCount < 0) {
+    } else {
         areaData.leave_org_num += 1;
     }
 }
@@ -185,9 +196,21 @@ void AreaAlarm::DualLineCount(PassFlowAreaTargets& areaData, const std::deque<Ai
     if (seq.size() < 2) {
         return;
     }
+    int trackId = history.empty() ? -1 : history.back().trackId;
+    if (trackId < 0) {
+        return;
+    }
+    constexpr auto kDebounce = std::chrono::seconds(2);
+    auto now                 = std::chrono::steady_clock::now();
+    auto& td                 = areaData.target_map[static_cast<unsigned>(trackId)];
+    if (td.last_count_tp.time_since_epoch().count() != 0 && now - td.last_count_tp < kDebounce) {
+        return;
+    }
     if (seq[0] == checkId && seq[1] == shaftId) {
+        td.last_count_tp = now;
         areaData.enter_org_num += 1;
     } else if (seq[0] == shaftId && seq[1] == checkId) {
+        td.last_count_tp = now;
         areaData.leave_org_num += 1;
     }
 }
