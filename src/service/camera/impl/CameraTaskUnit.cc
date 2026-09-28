@@ -55,7 +55,7 @@ namespace {
     }
 
     bool IsKeyOnlyChannelCompatibilityException(std::string_view key) {
-        return key == cosmo::key::CHANNEL_SOURCE_REPEAT;
+        return key == cosmo::key::CHANNEL_SOURCE_REPEAT || key == "param.dualLineAnd";
     }
 
 }  // namespace

@@ -76,12 +76,20 @@ bool NetworkConfigServiceImpl::SearchSetNewInfo(platform::NetCardInfo& netCard, 
 }
 
 void NetworkConfigServiceImpl::SetToDefault() {
+    auto live = platform::GetIpInfo(platform::kNetworkMainEthName);
     std::lock_guard<std::shared_mutex> lock(mtx_);
     net_card_info_.main.eth_name = platform::kNetworkMainEthName;
-    net_card_info_.main.dhcp     = 0;
-    net_card_info_.main.ip_addr  = "192.168.2.27";
-    net_card_info_.main.net_mask = "255.255.255.0";
-    net_card_info_.main.gateway  = "192.168.2.1";
+    if (!live.ip_addr.empty()) {
+        net_card_info_.main.dhcp     = live.dhcp;
+        net_card_info_.main.ip_addr  = live.ip_addr;
+        net_card_info_.main.net_mask = live.net_mask.empty() ? "255.255.255.0" : live.net_mask;
+        net_card_info_.main.gateway  = live.gateway.empty() ? "192.168.2.1" : live.gateway;
+    } else {
+        net_card_info_.main.dhcp     = 0;
+        net_card_info_.main.ip_addr  = "192.168.100.1";
+        net_card_info_.main.net_mask = "255.255.255.0";
+        net_card_info_.main.gateway  = "192.168.100.1";
+    }
 
     net_card_info_.sub.eth_name = platform::kNetworkSubEthName;
     net_card_info_.sub.dhcp     = 0;

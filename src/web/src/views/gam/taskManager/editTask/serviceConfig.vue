@@ -80,7 +80,7 @@
                   <el-form-item :label="t('systemManage.osdColor')">
                     <el-color-picker v-model="osdConfig.color" size="small" />
                   </el-form-item>
-                  <el-form-item v-if="String(algorithmCode) === '92113'" :label="t('systemManage.dualLineAnd')">
+                  <el-form-item v-if="isPassFlowCordon" :label="t('systemManage.dualLineAnd')">
                     <el-switch v-model="dualLineAnd" />
                     <span class="osd-dual-tip">{{ t('systemManage.dualLineAndTip') }}</span>
                   </el-form-item>
@@ -595,7 +595,7 @@ const getSelectConfig = () => {
       }
       config.value.regionType = resData.algorithmMetadata.regionType
       config.value.maxAreaCount = resData.algorithmMetadata.maxAreaCount || 4
-      if (String(algorithmId.value) === '92113' || String(algorithmCode.value) === '92113') {
+      if (config.value.regionType === 'cordon' || config.value.regionType === 'oneWayCordon') {
         config.value.maxAreaCount = Math.max(Number(config.value.maxAreaCount) || 0, 2)
       }
       config.value.defaultFullScreen =
@@ -1086,6 +1086,10 @@ const LargeModelAlgorithmConfiguration = () => {
 
 const osdConfig = ref({ enterLabel: '', leaveLabel: '', xRatio: 0.7, yRatio: 0.6, fontSize: 22, color: '#DCE7FF' })
 const dualLineAnd = ref(false)
+const isPassFlowCordon = computed(() => {
+  const r = config.value?.regionType
+  return r === 'cordon' || r === 'oneWayCordon'
+})
 // shared with the detection-area tab so its canvas preview follows saves
 provide('osdConfigLive', osdConfig)
 

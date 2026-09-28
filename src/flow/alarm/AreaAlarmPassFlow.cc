@@ -115,31 +115,26 @@ bool AreaAlarm::UseDualLineAnd() const {
 void AreaAlarm::ResolveDualLineIds(std::string& checkId, std::string& shaftId) {
     checkId.clear();
     shaftId.clear();
-    std::vector<std::pair<double, std::string>> byY;
+    // Generic: detection-area list order. First line then second = enter.
+    // Optional names 检查/入井 still override when both are present.
+    std::string namedCheck;
+    std::string namedShaft;
     for (const auto& area : task_area_.areas) {
         if (area.name.find("检查") != std::string::npos) {
-            checkId = area.areaId;
+            namedCheck = area.areaId;
         }
         if (area.name.find("入井") != std::string::npos) {
-            shaftId = area.areaId;
-        }
-        double y = 0;
-        int n = 0;
-        for (const auto& p : area.linePoints) {
-            y += p.y;
-            ++n;
-        }
-        if (n > 0) {
-            byY.push_back({y / n, area.areaId});
+            namedShaft = area.areaId;
         }
     }
-    if (!checkId.empty() && !shaftId.empty() && checkId != shaftId) {
+    if (!namedCheck.empty() && !namedShaft.empty() && namedCheck != namedShaft) {
+        checkId = namedCheck;
+        shaftId = namedShaft;
         return;
     }
-    std::sort(byY.begin(), byY.end());
-    if (byY.size() >= 2) {
-        checkId = byY.front().second;
-        shaftId = byY.back().second;
+    if (task_area_.areas.size() >= 2) {
+        checkId = task_area_.areas[0].areaId;
+        shaftId = task_area_.areas[1].areaId;
     }
 }
 

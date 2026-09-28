@@ -15,9 +15,9 @@ set(MP4V2_CONFIGURE_ARGS
 
 if(COSMO_TARGET_ARCH STREQUAL "aarch64")
     list(APPEND MP4V2_CONFIGURE_ARGS --host=aarch64-linux-gnu)
-    # Native aarch64 (board) must set --build too; x86	o aarch64 CI must not,
-    # or configure tries to run aarch64 test binaries on the host.
-    if(NOT CMAKE_CROSSCOMPILING)
+    # Board-native builds often still set CMAKE_CROSSCOMPILING via a toolchain file.
+    # Key off the *host* CPU: only the aarch64 board should claim --build=aarch64.
+    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
         list(APPEND MP4V2_CONFIGURE_ARGS --build=aarch64-linux-gnu)
     endif()
 endif()
