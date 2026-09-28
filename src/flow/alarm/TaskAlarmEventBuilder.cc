@@ -166,17 +166,19 @@ void TaskAlarm::AttachAlarmMedia(CMsgOnEventsReq& eventData, const AlgDataPtr& a
         HandPicture(eventData, algData, alarmUnit);
     }
 
-    // Pass-flow (people/car): capture OSD tripwire + 进入/离开 picture.
+    // Pass-flow: OSD snapshot only when someone actually crossed (not 5s idle).
     if ((OnEventsPropertyType::People == m_propertyType) ||
         (OnEventsPropertyType::Car == m_propertyType)) {
-        HandPassFlowPicture(eventData, algData, alarmUnit);
+        if (alarmUnit.passFlowData.enterOrgNum != 0 || alarmUnit.passFlowData.leaveOrgNum != 0) {
+            HandPassFlowPicture(eventData, algData, alarmUnit);
+        }
     }
 }
 
 // Draw tripwires + cumulative 进入/离开 onto the current frame and save as the
 // event's full/orig/detect picture (same frame, per interface doc).
 void TaskAlarm::HandPassFlowPicture(CMsgOnEventsReq& msg, AlgDataPtr algData,
-                                    DataAlarmUnit& alarmUnit) {
+                                    DataAlarmUnit& /*alarmUnit*/) {
     auto img = service::ServiceRegistry::Instance().Get<service::IVideoFrameOSD>().CopyJpegSrcFrame(
         algData->chanDataDec.frame);
     if (!::VideoFrameValid(img)) {
@@ -192,16 +194,13 @@ void TaskAlarm::HandPassFlowPicture(CMsgOnEventsReq& msg, AlgDataPtr algData,
     if (jpegData.empty()) {
         return;
     }
-    const std::string localDir = cosmo::path::GetEventPath(msg.itimestamp);
-    std::filesystem::create_directories(localDir);
-    const std::string full = (std::filesystem::path(localDir) / (msg.messageId + "_full.jpg")).string();
+    const std::string full = GetJpgFileName(msg, "full");
     if (!cosmo::util::WriteFile(full, jpegData.data(), jpegData.size())) {
         return;
     }
-    const std::string name = msg.messageId + "_full.jpg";
-    msg.fullPicture        = name;
-    msg.orignalPicture     = name;
-    msg.detectedPicture    = name;
+    msg.fullPicture     = msg.messageId + "_full.jpg";
+    msg.orignalPicture  = msg.fullPicture;
+    msg.detectedPicture = msg.fullPicture;
 }
 
 // ---------------------------------------------------------------------------
@@ -522,14 +521,18 @@ void TaskAlarm::EventRecord(CMsgOnEventsReq& eventData) {
             int leaveNum  = eventData.property.people.leaveOrgNum;
             service::ServiceRegistry::Instance().Get<service::IAlarmRecordService>().InsertPassFlow(
                 eventData.videoChannelId, eventData.algorithmId, hour, enterNum, leaveNum);
-            return;
+            if (enterNum == 0 && leaveNum == 0) {
+                return;
+            }
         } else if (OnEventsPropertyType::Car == eventData.property.type) {
             uint64_t hour = atol(eventData.property.car.time.c_str());
             int enterNum  = eventData.property.car.enterOrgNum;
             int leaveNum  = eventData.property.car.leaveOrgNum;
             service::ServiceRegistry::Instance().Get<service::IAlarmRecordService>().InsertPassFlow(
                 eventData.videoChannelId, eventData.algorithmId, hour, enterNum, leaveNum);
-            return;
+            if (enterNum == 0 && leaveNum == 0) {
+                return;
+            }
         }
         (void)util::EncodeJson(eventData.property, alarmRecordUnit.property);
     }
