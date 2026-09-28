@@ -2,8 +2,10 @@
 
 #include "api/MessageLiveStreamHandler.h"
 
+#include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <sys/stat.h>
 
 #include "flow/common/AreaLineUtil.h"
 #include "flow/common/FlowTaskUtil.h"
@@ -186,6 +188,21 @@ LiveStream::MsgGetOsdPictureSend MessageLiveStreamHandler::Handle(LiveStream::Ms
     {
         std::ofstream ofs(fpath, std::ios::binary);
         ofs.write(reinterpret_cast<const char*>(jpeg.data()), jpeg.size());
+    }
+    // Unique file per request (concurrent pulls must not share a path).
+    // ponytail: drop jpgs older than 5 min so today's /web/ cannot fill the disk.
+    {
+        std::error_code ec;
+        const auto now = std::time(nullptr);
+        for (const auto& ent : std::filesystem::directory_iterator(webDir, ec)) {
+            if (!ent.is_regular_file(ec) || ent.path().extension() != ".jpg") {
+                continue;
+            }
+            struct stat st {};
+            if (::stat(ent.path().c_str(), &st) == 0 && now - st.st_mtime > 300) {
+                std::filesystem::remove(ent.path(), ec);
+            }
+        }
     }
     retData.resData.url = (std::filesystem::path(webUrl) / fname).string();
     // nginx serves /web/... directly; fullUrl left relative-friendly.
