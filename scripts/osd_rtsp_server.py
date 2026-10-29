@@ -40,10 +40,12 @@ class Server(GstRtspServer.RTSPServer):
             if path in self.live:
                 continue
             factory = GstRtspServer.RTSPMediaFactory()
+            # config-interval: in-band SPS/PPS. Hikvision NVR often fails without it.
             factory.set_launch(
                 'souphttpsrc location=http://127.0.0.1:18088/live/{}.flv '
-                'is-live=true do-timestamp=true ! flvdemux ! h264parse ! '
-                'rtph264pay name=pay0 pt=96'.format(name))
+                'is-live=true do-timestamp=true ! flvdemux ! '
+                'h264parse config-interval=-1 ! '
+                'rtph264pay name=pay0 pt=96 config-interval=1'.format(name))
             factory.set_shared(True)
             self.mounts.add_factory(path, factory)
             self.live[path] = True
