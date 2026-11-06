@@ -18,6 +18,17 @@ static constexpr const char* kTag = "AreaAlarm ";
 namespace chrono = std::chrono;
 namespace cosmo {
 
+namespace {
+// A switched track often jumps to a new box whose center is still inside the
+// previous box, even when IoU/IoM are low. Two side-by-side people do not
+// contain each other's centers.
+bool BoxCenterInside(const util::Box& inner, const util::Box& outer) {
+    const float cx = inner.x + inner.width * 0.5f;
+    const float cy = inner.y + inner.height * 0.5f;
+    return cx >= outer.x && cx <= outer.x + outer.width && cy >= outer.y && cy <= outer.y + outer.height;
+}
+}  // namespace
+
 // Area target count report
 void AreaAlarm::HandAreaTargetCountReport(AlgDataPtr algData, DataDetTrackClassifyPtr input) {
     auto now                          = chrono::steady_clock::now();
@@ -127,9 +138,16 @@ void AreaAlarm::PassFlowCount(PassFlowAreaTargets& areaData, const std::deque<Ai
                        [&](const PassFlowAreaTargets::Counted& c) { return now - c.when > std::chrono::seconds(4); }),
         areaData.recent_counts.end());
     for (const auto& c : areaData.recent_counts) {
-        if (c.dir == dir && IntersectionUnionRatio(c.box, last.box) > 0.4f) {
-            LOG_INFO("{}[{}] duplicate trackId:{} dir:{} iou:{:.2f} drop", kTag, task_id, trackId, dir,
-                     IntersectionUnionRatio(c.box, last.box));
+        const float iou = IntersectionUnionRatio(c.box, last.box);
+        // A track switch often shifts/scales the box: IoU drops below 0.4 even
+        // though the smaller box is mostly inside the older one. Treat that as
+        // the same person, not a second pass.
+        const float iom = std::max(IntersectionIncludeRatio(c.box, last.box),
+                                   IntersectionIncludeRatio(last.box, c.box));
+        const bool center_dup = BoxCenterInside(last.box, c.box) || BoxCenterInside(c.box, last.box);
+        if (c.dir == dir && (iou > 0.4f || iom > 0.5f || center_dup)) {
+            LOG_INFO("{}[{}] duplicate trackId:{} dir:{} iou:{:.2f} iom:{:.2f} center:{} drop", kTag, task_id,
+                     trackId, dir, iou, iom, center_dup ? 1 : 0);
             return;
         }
     }
