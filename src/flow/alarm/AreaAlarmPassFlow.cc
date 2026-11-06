@@ -140,12 +140,13 @@ void AreaAlarm::PassFlowCount(PassFlowAreaTargets& areaData, const std::deque<Ai
     for (const auto& c : areaData.recent_counts) {
         const float iou = IntersectionUnionRatio(c.box, last.box);
         // A track switch often shifts/scales the box: IoU drops below 0.4 even
-        // though the smaller box is mostly inside the older one. Treat that as
-        // the same person, not a second pass.
+        // though the smaller box is mostly inside the older one. An adjacent
+        // false box overlaps only a corner of the real box (IoU ~0.06-0.10,
+        // IoM ~0.12-0.20). Side-by-side people in this view do not overlap.
         const float iom = std::max(IntersectionIncludeRatio(c.box, last.box),
                                    IntersectionIncludeRatio(last.box, c.box));
         const bool center_dup = BoxCenterInside(last.box, c.box) || BoxCenterInside(c.box, last.box);
-        if (c.dir == dir && (iou > 0.4f || iom > 0.5f || center_dup)) {
+        if (c.dir == dir && (iou > 0.08f || iom > 0.1f || center_dup)) {
             LOG_INFO("{}[{}] duplicate trackId:{} dir:{} iou:{:.2f} iom:{:.2f} center:{} drop", kTag, task_id,
                      trackId, dir, iou, iom, center_dup ? 1 : 0);
             return;
