@@ -7,6 +7,8 @@ daemon              on;
 pid                 @COSMO_DATA_DIR@/log/logs/srs.pid;
 srs_log_tank        file;
 srs_log_file        @COSMO_DATA_DIR@/log/logs/srs.log;
+# default trace fills small /userdata; warn is enough to debug publish/play.
+srs_log_level       warn;
 
 http_api {
     enabled         on;

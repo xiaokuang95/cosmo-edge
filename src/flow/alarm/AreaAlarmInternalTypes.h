@@ -83,6 +83,13 @@ struct AreaAlarm::PassFlowAreaTargets {
     size_t enter_total_num{0};
     size_t leave_total_num{0};
     std::map<unsigned, AreaAlarm::PassFlowTrackIdData> target_map;
+    // Recent accepted crossings, to merge duplicate ids of one person.
+    struct Counted {
+        cosmo::util::Box box;
+        int dir{0};  // 1 enter, -1 leave
+        std::chrono::steady_clock::time_point when{};
+    };
+    std::vector<Counted> recent_counts;
 };
 
 }  // namespace cosmo

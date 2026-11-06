@@ -24,7 +24,7 @@ struct PUBLIC TrackingBox {
 };
 
 struct PUBLIC TrackerConfig {
-    int max_age                           = 5;
+    int max_age                           = 30;  // keep a lost track ~3s at 10fps instead of a new id
     int min_hits                          = 1;
     int max_range                         = 300;
     int trajectory_length                 = 50;

@@ -249,6 +249,50 @@ TEST_CASE("BoxIncludeBox", "[Geometric]") {
     REQUIRE(cosmo::util::BoxIncludeBox(outer, partial) == false);
 }
 
+TEST_CASE("LineIntersection - normalized MsgPoint tripwire", "[Geometric]") {
+    cosmo::MsgPoint a1{0.50, 0.80}, a2{0.50, 0.40};
+    cosmo::MsgPoint b1{0.05, 0.55}, b2{0.98, 0.55};
+    REQUIRE(cosmo::util::LineIntersection(a1, a2, b1, b2) == -1);
+}
+
+TEST_CASE("CalcBreakLine - side change counts, first sighting does not", "[Geometric]") {
+    using Side = cosmo::TargetPositionOnLineType;
+    using Brk  = cosmo::TargetBreakLineType;
+
+    SECTION("known side change counts") {
+        REQUIRE(cosmo::util::CalcBreakLine(Side::kRight, Side::kLeft, false) == Brk::kNeg);
+        REQUIRE(cosmo::util::CalcBreakLine(Side::kRight, Side::kLeft, true) == Brk::kPos);
+        REQUIRE(cosmo::util::CalcBreakLine(Side::kLeft, Side::kRight, false) == Brk::kPos);
+    }
+    SECTION("first sighting does not count") {
+        REQUIRE(cosmo::util::CalcBreakLine(Side::kUnknown, Side::kLeft, true) == Brk::kNone);
+        REQUIRE(cosmo::util::CalcBreakLine(Side::kUnknown, Side::kRight, false) == Brk::kNone);
+        REQUIRE(cosmo::util::CalcBreakLine(Side::kOnLine, Side::kLeft, true) == Brk::kNone);
+    }
+}
+
+TEST_CASE("KeepFirstDirection - opposite flip is dropped", "[Geometric]") {
+    using Brk = cosmo::TargetBreakLineType;
+    int dir = 0;
+    REQUIRE(cosmo::util::KeepFirstDirection(dir, Brk::kPos) == Brk::kPos);
+    REQUIRE(dir == 1);
+    REQUIRE(cosmo::util::KeepFirstDirection(dir, Brk::kNeg) == Brk::kNone);
+    REQUIRE(cosmo::util::KeepFirstDirection(dir, Brk::kPos) == Brk::kNone);
+}
+
+TEST_CASE("BoxOnLinePos - close-up pedestrian center already past y=0.55", "[Geometric]") {
+    // 1920x1080, feet ~0.90, head ~0.10: center 0.50 is already on the far side of y=0.55.
+    const std::vector<cosmo::MsgPoint> line{{0.05, 0.55}, {0.98, 0.55}};
+    cosmo::util::Box box(860, 108, 200, 864);
+    cosmo::util::Point p;
+    auto center = cosmo::util::BoxOnLinePos(box, cosmo::TargetPosition::kCenter, p, line, 1920, 1080);
+    auto bottom = cosmo::util::BoxOnLinePos(box, cosmo::TargetPosition::kBottom, p, line, 1920, 1080);
+    auto top    = cosmo::util::BoxOnLinePos(box, cosmo::TargetPosition::kTop, p, line, 1920, 1080);
+    REQUIRE(center == cosmo::TargetPositionOnLineType::kLeft);
+    REQUIRE(bottom == cosmo::TargetPositionOnLineType::kRight);
+    REQUIRE(top == cosmo::TargetPositionOnLineType::kLeft);
+}
+
 // ========================================================================
 // Legacy backward-compatibility aliases
 // ========================================================================

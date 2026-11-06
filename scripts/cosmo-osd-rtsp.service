@@ -1,7 +1,7 @@
 [Unit]
 Description=Cosmo OSD RTSP relay (FLV -> RTSP)
 After=cosmo.service
-Requires=cosmo.service
+Wants=cosmo.service
 
 [Service]
 Type=simple

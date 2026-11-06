@@ -135,6 +135,7 @@ nginx -p "${NGINX_PREFIX}" -c "${NGINX_CONF}"
 # Start SRS media server (for srs/webrtc/srs-flv/httpflv-srs play modes)
 PLAY_MODE="${COSMO_STREAM_PLAY_MODE}"
 if [ "$PLAY_MODE" = "srs" ] || [ "$PLAY_MODE" = "webrtc" ] || [ "$PLAY_MODE" = "srs-flv" ] || [ "$PLAY_MODE" = "httpflv-srs" ]; then
+    truncate_oversized_log "${COSMO_DATA_DIR}/log/logs/srs.log"
     cosmo_log "$logTag" "Starting SRS media server (mode: ${PLAY_MODE})..." "$logFile"
     ./srs -c "${SRS_CONF}" &
 fi

@@ -1,7 +1,7 @@
 [Unit]
 Description=Cosmo ONVIF device/media service (SOAP + WS-Discovery)
 After=cosmo.service
-Requires=cosmo.service
+Wants=cosmo.service
 
 [Service]
 Type=simple

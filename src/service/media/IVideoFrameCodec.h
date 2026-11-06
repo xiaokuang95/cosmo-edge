@@ -4,6 +4,7 @@
 ///        Consumed by AlgChannelDecode, PTaskBaseUpload.
 #pragma once
 
+#include <sys/types.h>
 #include <vector>
 
 #include "service/media/dto/VideoFrameFwd.h"

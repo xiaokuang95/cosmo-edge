@@ -28,6 +28,34 @@ namespace cosmo::util {
                                                            const std::vector<cosmo::MsgPoint>& area_points,
                                                            int pic_width = 1920, int pic_height = 1080);
 
+/// Tripwire pulse from last/current side. A first sighting does not count.
+[[nodiscard]] inline cosmo::TargetBreakLineType CalcBreakLine(cosmo::TargetPositionOnLineType prev,
+                                                              cosmo::TargetPositionOnLineType now, bool two_way) {
+    using Side = cosmo::TargetPositionOnLineType;
+    using Brk  = cosmo::TargetBreakLineType;
+    if (prev != Side::kLeft && prev != Side::kRight) {
+        return Brk::kNone;
+    }
+    if (now != Side::kLeft && now != Side::kRight) {
+        return Brk::kNone;
+    }
+    if (prev == now) {
+        return Brk::kNone;
+    }
+    return (prev == Side::kLeft || two_way) ? Brk::kPos : Brk::kNeg;
+}
+
+// One track, one count. A later flip the other way is not a second trip.
+[[nodiscard]] inline cosmo::TargetBreakLineType KeepFirstDirection(int& counted_dir,
+                                                                   cosmo::TargetBreakLineType type) {
+    using Brk = cosmo::TargetBreakLineType;
+    if (type == Brk::kNone || counted_dir != 0) {
+        return Brk::kNone;
+    }
+    counted_dir = type == Brk::kPos ? 1 : -1;
+    return type;
+}
+
 /// Merge two boxes into the smallest enclosing box.
 [[nodiscard]] cosmo::util::Box BoxMerge(cosmo::util::Box rect1, cosmo::util::Box rect2);
 
@@ -76,6 +104,8 @@ using util::BoxInArea;
 using util::BoxIncludeBox;
 using util::BoxMerge;
 using util::BoxOnLinePos;
+using util::CalcBreakLine;
+using util::KeepFirstDirection;
 using util::DoScaleBox;
 using util::GetBoxOsdLines;
 using util::GetMsgPointFromRect;

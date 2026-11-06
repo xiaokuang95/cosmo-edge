@@ -91,11 +91,10 @@ INSTALL=\$(find /tmp/cosmo-stock -name install.sh | head -1)
 [ -n "\$INSTALL" ] || { echo "install.sh not in package"; exit 1; }
 sh "\$INSTALL"
 systemctl daemon-reload
+# Stock engine netplan-apply fights NetworkManager (Armbian/DshanPi). Overlay first.
+systemctl disable --now cosmo.service 2>/dev/null || true
 pin_live_ip
-timeout 25 systemctl start cosmo.service || true
-sleep 3
-systemctl is-active --quiet cosmo.service || { journalctl -u cosmo.service -n 30 --no-pager; exit 1; }
-echo "stock Cosmo installed"
+echo "stock Cosmo installed (not started)"
 REMOTE
 fi
 
@@ -119,12 +118,6 @@ $(pin_net_fn)
 pin_live_ip
 mkdir -p /etc/netplan
 systemctl disable --now nginx 2>/dev/null || true
-systemctl stop cosmo.service || true
-killall -9 cosmo-engine nginx srs 2>/dev/null || true
-sleep 1
-timeout 25 systemctl start cosmo.service || true
-sleep 3
-systemctl is-active --quiet cosmo.service || { journalctl -u cosmo.service -n 20 --no-pager; exit 1; }
 
 PKGS="libgstrtspserver-1.0-0 gstreamer1.0-rtsp gir1.2-gst-rtsp-server-1.0 python3-gi"
 if ! dpkg -s \$PKGS >/dev/null 2>&1; then
@@ -137,8 +130,12 @@ chmod 755 /opt/cosmo-osd/*.py
 cp /tmp/cosmo-osd-rtsp.service /tmp/cosmo-onvif.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now cosmo-osd-rtsp.service cosmo-onvif.service
-systemctl restart cosmo-osd-rtsp.service cosmo-onvif.service
-sleep 2
+
+# Start last: NM/netplan apply can drop this SSH session.
+systemctl enable cosmo.service
+systemctl start cosmo.service
+sleep 3
+systemctl is-active --quiet cosmo.service || { journalctl -u cosmo.service -n 20 --no-pager; exit 1; }
 systemctl is-active --quiet cosmo-osd-rtsp.service
 systemctl is-active --quiet cosmo-onvif.service
 IP=\$(ip -4 route get 1.1.1.1 2>/dev/null | sed -n 's/.*src \\([0-9.]*\\).*/\\1/p')

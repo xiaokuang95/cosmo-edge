@@ -126,6 +126,30 @@ rotate_external_log() {
     mv -f "$file" "${file}.1"
 }
 
+# SRS only appends; drop leftovers that would refill small /userdata.
+# Usage: truncate_oversized_log <file> [max_bytes]
+truncate_oversized_log() {
+    local file="$1"
+    local max_bytes="${2:-8388608}"
+    local current_bytes
+
+    [ -n "$file" ] || return 0
+    [ -f "$file" ] || return 0
+    case "$max_bytes" in
+        ''|*[!0-9]*) max_bytes=8388608 ;;
+    esac
+    if [ "$max_bytes" -lt 1 ]; then
+        max_bytes=8388608
+    fi
+    current_bytes="$(wc -c < "$file" 2>/dev/null | tr -d '[:space:]' || echo 0)"
+    case "$current_bytes" in
+        ''|*[!0-9]*) current_bytes=0 ;;
+    esac
+    if [ "$current_bytes" -gt "$max_bytes" ]; then
+        : >"$file" || true
+    fi
+}
+
 # Usage: cosmo_log <TAG> <message> [logFile]
 cosmo_log() {
     local tag="$1" msg="$2" file="${3:-}"

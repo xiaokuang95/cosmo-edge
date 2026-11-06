@@ -2,6 +2,7 @@
 // Split from AiTracker.cc to reduce file size (DEBT-007).
 
 #include <algorithm>
+#include <limits>
 
 #include "flow/common/AlgDataRecord.h"
 #include "flow/track/AiTracker.h"
@@ -164,11 +165,23 @@ void AiTracker::TargetAddHistory(AlgDataPtr algData) {
 }
 
 void AiTracker::TargetOldHistory(AlgDataPtr /*algData*/) {
+    // Keep line side/state across short detection gaps, like the tracker does.
+    constexpr int kKeepLostTrackFrames = 40;
     for (auto it = map_track_id_status_.begin(); it != map_track_id_status_.end();) {
         if (!it->second.detected) {
-            it = map_track_id_status_.erase(it);
+            ++it->second.missed_frames;
+            if (it->second.missed_frames > kKeepLostTrackFrames) {
+                LOG_AITARGET("{}[{} {}] drop track {} last box:{}x{} {}x{} missed:{}", kTag, name_, uuid,
+                         it->first, it->second.det_el.box.x, it->second.det_el.box.y,
+                         it->second.det_el.box.width, it->second.det_el.box.height,
+                         it->second.missed_frames);
+                it = map_track_id_status_.erase(it);
+            } else {
+                ++it;
+            }
         } else {
-            it->second.detected = false;
+            it->second.missed_frames = 0;
+            it->second.detected      = false;
             ++it;
         }
     }
@@ -187,7 +200,8 @@ TargetLineUnit AiTracker::TargetOnLinePos(const AiDetectRstEl& target, const std
 void AiTracker::TargetCalcBreakLineArea(TrackIdData& idData, const MsgTaskArea& area) {
     auto& targetLineData           = idData.line_datas[area.areaId];
     targetLineData.break_line_type = TargetBreakLineType::kNone;
-    if (idData.det_el.bFilter) {
+    // Predicted (LOSS) boxes are guesses; only real detections move the line state.
+    if (idData.det_el.bFilter || AITrackingStatus::TRACKING != idData.det_el.trackStatus) {
         return;
     }
     // Enter shielded area
@@ -207,6 +221,30 @@ void AiTracker::TargetCalcBreakLineArea(TrackIdData& idData, const MsgTaskArea& 
     if (TargetPositionOnLineType::kOnLine == targetPosNow) {
         // Point is on the line, does not cross
         return;
+    }
+
+    // A crossing must clear a band around the line and hold for two frames.
+    // Box-height-proportional, so it works at any resolution; stops foot jitter
+    // on the line from counting a pass, and a new track id born on the line
+    // from counting at all (its side is learned once it leaves the band).
+    if (area.linePoints.size() >= 2) {
+        cosmo::util::Point point_px;
+        auto point = GetMsgPointFromRect(idData.det_el.box, targetInfo.position, point_px, pic_width_, pic_height_);
+        double dist = std::numeric_limits<double>::max();
+        for (size_t i = 1; i < area.linePoints.size(); ++i) {
+            dist = std::min(dist, static_cast<double>(
+                                       cosmo::util::PointLineDistance(point, area.linePoints[i - 1],
+                                                                      area.linePoints[i])));
+        }
+        const double h      = std::max(1, pic_height_);
+        const double margin = std::max(6.0 / h, 0.1 * idData.det_el.box.height / h);
+        if (dist < margin) {
+            return;
+        }
+        if (targetLineData.last_outside_pos != targetPosNow) {
+            targetLineData.last_outside_pos = targetPosNow;
+            return;
+        }
     }
 
     // Latest point has same relative position as the last point
@@ -234,59 +272,20 @@ void AiTracker::TargetCalcBreakLineArea(TrackIdData& idData, const MsgTaskArea& 
             pic_width_, pic_height_, idData.det_el.motionStatus, idData.det_el.trackStatus);
     }
 
-    // Latest detected point is in shielded area or last point is in shielded area
-    if ((TargetPositionOnLineType::kUnknown == targetPosNow) ||
-        (TargetPositionOnLineType::kUnknown == targetLineData.target_pos_now)) {
-        // Crossing status remains unchanged
-        targetLineData.target_pos_now = targetPosNow;
-        targetLineData.det_el         = idData.det_el;
-        return;
-    }
-
-    bool direction = false;
-    if (TargetPositionOnLineType::kLeft == targetLineData.target_pos_now) {
-        direction = true;  // Unidirectional line crossing forward
-    }
-    if (DirectionType::DirectionTypeTwoWay == area.iderectionType) {
-        direction = true;  // Bidirectional line always crosses
-    }
-    // Crossing line
-    // Determine intersection
-    const auto& linePoints = area.linePoints;
-    auto point1            = GetMsgPointFromRect(targetLineData.det_el.box, targetInfo.position,
-                                                 targetLineData.det_el.point, pic_width_, pic_height_);
-    auto point2 = GetMsgPointFromRect(idData.det_el.box, targetInfo.position, idData.det_el.point, pic_width_,
-                                      pic_height_);
-    for (size_t j = 1; j < linePoints.size(); ++j) {
-        if ((std::max(point1.x, point2.x) >= std::min(linePoints[j - 1].x, linePoints[j].x) &&
-             std::min(point1.x, point2.x) <=
-                 std::max(linePoints[j - 1].x, linePoints[j].x)) &&  // Check x-axis projection
-            (std::max(point1.y, point2.y) >= std::min(linePoints[j - 1].y, linePoints[j].y) &&
-             std::min(point1.y, point2.y) <=
-                 std::max(linePoints[j - 1].y, linePoints[j].y))  // Check y-axis projection
-        ) {
-            auto bIntersection = util::LineIntersection(point1, point2, linePoints[j - 1], linePoints[j]);
-            if (bIntersection <= 0)  // Segment intersection and point on segment both count as crossing,
-                                     // Point on line - since detection is line-segment by line-segment,
-                                     // crossing exactly on the line is possible
-            {
-                LOG_AITARGET("{}[{} {}] TrackId {} {}crossed line {}/{} At {}", kTag, name_, uuid,
-                             idData.track_id, direction ? "forward" : "reverse", area.areaId, area.name,
-                             frame_index_);
-                if (direction)
-                    targetLineData.break_line_type = TargetBreakLineType::kPos;
-                else
-                    targetLineData.break_line_type = TargetBreakLineType::kNeg;
-            } else {
-                LOG_AITARGET("{}[{} {}] TrackId {} no intersection", kTag, name_, uuid, idData.track_id);
-            }
-        } else {
-            LOG_AITARGET("{}[{} {}] TrackId {} projection mismatch", kTag, name_, uuid, idData.track_id);
-        }
+    const bool two_way = DirectionType::DirectionTypeTwoWay == area.iderectionType;
+    // Forward is the left side of the drawn line, not the camera.
+    auto type = CalcBreakLine(targetLineData.target_pos_now, targetPosNow, two_way);
+    type      = KeepFirstDirection(targetLineData.counted_dir, type);
+    if (type != TargetBreakLineType::kNone) {
+        LOG_INFO("{}[{} {}] TrackId {} {}crossed line {}/{} prev:{} now:{} box:{}x{} {}x{} At {}", kTag, name_, uuid,
+                 idData.track_id, type == TargetBreakLineType::kPos ? "forward" : "reverse", area.areaId,
+                 area.name, static_cast<int>(targetLineData.target_pos_now), static_cast<int>(targetPosNow),
+                 idData.det_el.box.x, idData.det_el.box.y, idData.det_el.box.width, idData.det_el.box.height,
+                 frame_index_);
+        targetLineData.break_line_type = type;
     }
     targetLineData.target_pos_now = targetPosNow;
     targetLineData.det_el         = idData.det_el;
-    // targetLineData.break_line_type = TargetBreakLineType::kNone;
 }
 
 void AiTracker::TargetCalcBreakLine(AlgDataPtr /*algData*/) {
@@ -298,7 +297,7 @@ void AiTracker::TargetCalcBreakLine(AlgDataPtr /*algData*/) {
     for (auto it = map_track_id_status_.begin(); it != map_track_id_status_.end(); it++) {
         for (auto& area : task_area_.areas) {
             auto& idData = it->second;
-            if (idData.det_el.bFilter) {
+            if (idData.missed_frames > 0 || idData.det_el.bFilter) {
                 continue;
             }
             TargetCalcBreakLineArea(idData, area);

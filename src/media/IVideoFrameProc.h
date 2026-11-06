@@ -9,6 +9,7 @@
 
 #include <string>
 #include <utility>
+#include <sys/types.h>
 #include <vector>
 
 #include "media/Color.h"

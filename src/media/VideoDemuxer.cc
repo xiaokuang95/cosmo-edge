@@ -139,6 +139,10 @@ namespace media {
 
         ResetStreamState();
 
+        // Reopening after EOF: free the old context first. avformat_open_input
+        // would otherwise reuse the stale RTSP context and crash in ff_sdp_parse.
+        SafeCloseContext();
+
         // Release old strategy and its resources before creating a new one
         strategy_.reset();
         strategy_ = CreateStrategy(filename_, pullTimeoutSec, delayMs);

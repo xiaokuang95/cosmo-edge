@@ -3,11 +3,14 @@
 
 #include "flow/alarm/AreaAlarm.h"
 #include "flow/alarm/AreaAlarmInternalTypes.h"
+
 #include "util/AiTypes.h"
 #include "util/DateTimeFormat.h"
+#include "util/GeometricPos.h"
 #include "util/Log.h"
 
 #include <algorithm>
+#include <cmath>
 #include <set>
 
 static constexpr const char* kTag = "AreaAlarm ";
@@ -82,6 +85,7 @@ void AreaAlarm::PassFlowCount(PassFlowAreaTargets& areaData, const std::deque<Ai
                               const std::string& areaId) {
     int passCount = 0;  // Forward crossing: +1, reverse crossing: -1
     int trackId   = -1;
+    const AiDetectRstEl* cross_el = nullptr;
     for (auto& target : history) {
         trackId = target.trackId;
         for (auto& targetLine : target.areaSign.lines) {
@@ -91,8 +95,10 @@ void AreaAlarm::PassFlowCount(PassFlowAreaTargets& areaData, const std::deque<Ai
 
             if (TargetBreakLineType::kPos == targetLine.status) {
                 passCount += 1;
+                cross_el = &target;
             } else if (TargetBreakLineType::kNeg == targetLine.status) {
                 passCount -= 1;
+                cross_el = &target;
             }
         }
     }
@@ -111,6 +117,25 @@ void AreaAlarm::PassFlowCount(PassFlowAreaTargets& areaData, const std::deque<Ai
     if (td.last_count_tp.time_since_epoch().count() != 0 && now - td.last_count_tp < kDebounce) {
         return;
     }
+    const int dir = passCount > 0 ? 1 : -1;
+    const auto& last = cross_el ? *cross_el : history.back();
+    // Two ids on one person must not count twice. Same direction and heavily
+    // overlapping box within 4s = the same crossing; side-by-side people do
+    // not overlap this much, so simultaneous passes still count.
+    areaData.recent_counts.erase(
+        std::remove_if(areaData.recent_counts.begin(), areaData.recent_counts.end(),
+                       [&](const PassFlowAreaTargets::Counted& c) { return now - c.when > std::chrono::seconds(4); }),
+        areaData.recent_counts.end());
+    for (const auto& c : areaData.recent_counts) {
+        if (c.dir == dir && IntersectionUnionRatio(c.box, last.box) > 0.4f) {
+            LOG_INFO("{}[{}] duplicate trackId:{} dir:{} iou:{:.2f} drop", kTag, task_id, trackId, dir,
+                     IntersectionUnionRatio(c.box, last.box));
+            return;
+        }
+    }
+    LOG_INFO("{}[{}] count trackId:{} dir:{} hist:{} conf:{:.2f} box:{}x{} {}x{}", kTag, task_id, trackId, dir,
+             history.size(), last.confidence.confidence, last.box.x, last.box.y, last.box.width, last.box.height);
+    areaData.recent_counts.push_back({last.box, dir, now});
     td.last_count_tp = now;
     if (passCount > 0) {
         areaData.enter_org_num += 1;

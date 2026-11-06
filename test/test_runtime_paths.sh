@@ -97,6 +97,7 @@ render_data_dir="${root}/userdata/cwaiuserdata"
     grep -Fq "alias ${render_data_dir}/event;" "$COSMO_RUNTIME_NGINX_UPSTREAM_CONF"
     grep -Fq "pid                 ${render_data_dir}/log/logs/srs.pid;" \
         "$COSMO_RUNTIME_SRS_CONF"
+    grep -Fq "srs_log_level       warn;" "$COSMO_RUNTIME_SRS_CONF"
     if grep -R -Fq '@COSMO_DATA_DIR@' "$COSMO_RUNTIME_NGINX_PREFIX" "$COSMO_RUNTIME_SRS_CONF"; then
         exit 1
     fi
@@ -104,5 +105,19 @@ render_data_dir="${root}/userdata/cwaiuserdata"
         exit 1
     fi
 )
+
+oversized="${root}/srs.log"
+printf 'x%.0s' $(seq 1 100) >"$oversized"
+(
+    . "${repo}/scripts/common.sh"
+    truncate_oversized_log "$oversized" 50
+)
+test "$(wc -c < "$oversized" | tr -d '[:space:]')" = 0
+printf 'ok' >"$oversized"
+(
+    . "${repo}/scripts/common.sh"
+    truncate_oversized_log "$oversized" 50
+)
+test "$(cat "$oversized")" = ok
 
 echo "runtime path resolution tests passed"

@@ -31,6 +31,7 @@ add_library(cosmo_api OBJECT
 # Project headers
 target_include_directories(cosmo_api PRIVATE
     ${CMAKE_SOURCE_DIR}/src
+    ${FFMPEG_HEADERS}
 )
 
 target_link_libraries(cosmo_api PRIVATE cosmo_common)
