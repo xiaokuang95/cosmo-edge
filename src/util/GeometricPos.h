@@ -45,14 +45,20 @@ namespace cosmo::util {
     return (prev == Side::kLeft || two_way) ? Brk::kPos : Brk::kNeg;
 }
 
-// One track, one count. A later flip the other way is not a second trip.
+// Count each direction change once: enter, then leave, then re-enter.
+// Repeated crossings in the same direction are ignored; the per-track
+// debounce in AreaAlarmPassFlow still filters line jitter.
 [[nodiscard]] inline cosmo::TargetBreakLineType KeepFirstDirection(int& counted_dir,
                                                                    cosmo::TargetBreakLineType type) {
     using Brk = cosmo::TargetBreakLineType;
-    if (type == Brk::kNone || counted_dir != 0) {
+    if (type == Brk::kNone) {
         return Brk::kNone;
     }
-    counted_dir = type == Brk::kPos ? 1 : -1;
+    const int dir = type == Brk::kPos ? 1 : -1;
+    if (counted_dir == dir) {
+        return Brk::kNone;
+    }
+    counted_dir = dir;
     return type;
 }
 
