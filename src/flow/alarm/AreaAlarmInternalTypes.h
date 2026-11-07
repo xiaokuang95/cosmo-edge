@@ -88,8 +88,10 @@ struct AreaAlarm::PassFlowAreaTargets {
         cosmo::util::Box box;
         int dir{0};  // 1 enter, -1 leave
         std::chrono::steady_clock::time_point when{};
+        int track_id{-1};
     };
     std::vector<Counted> recent_counts;
+    std::chrono::steady_clock::time_point bottom_left_last_tp{};
 };
 
 }  // namespace cosmo

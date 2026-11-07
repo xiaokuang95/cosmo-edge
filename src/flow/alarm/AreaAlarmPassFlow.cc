@@ -18,17 +18,6 @@ static constexpr const char* kTag = "AreaAlarm ";
 namespace chrono = std::chrono;
 namespace cosmo {
 
-namespace {
-// A switched track often jumps to a new box whose center is still inside the
-// previous box, even when IoU/IoM are low. Two side-by-side people do not
-// contain each other's centers.
-bool BoxCenterInside(const util::Box& inner, const util::Box& outer) {
-    const float cx = inner.x + inner.width * 0.5f;
-    const float cy = inner.y + inner.height * 0.5f;
-    return cx >= outer.x && cx <= outer.x + outer.width && cy >= outer.y && cy <= outer.y + outer.height;
-}
-}  // namespace
-
 // Area target count report
 void AreaAlarm::HandAreaTargetCountReport(AlgDataPtr algData, DataDetTrackClassifyPtr input) {
     auto now                          = chrono::steady_clock::now();
@@ -139,22 +128,23 @@ void AreaAlarm::PassFlowCount(PassFlowAreaTargets& areaData, const std::deque<Ai
         areaData.recent_counts.end());
     for (const auto& c : areaData.recent_counts) {
         const float iou = IntersectionUnionRatio(c.box, last.box);
-        // A track switch often shifts/scales the box: IoU drops below 0.4 even
-        // though the smaller box is mostly inside the older one. An adjacent
-        // false box overlaps only a corner of the real box (IoU ~0.06-0.10,
-        // IoM ~0.12-0.20). Side-by-side people in this view do not overlap.
-        const float iom = std::max(IntersectionIncludeRatio(c.box, last.box),
-                                   IntersectionIncludeRatio(last.box, c.box));
-        const bool center_dup = BoxCenterInside(last.box, c.box) || BoxCenterInside(c.box, last.box);
-        if (c.dir == dir && (iou > 0.08f || iom > 0.1f || center_dup)) {
-            LOG_INFO("{}[{}] duplicate trackId:{} dir:{} iou:{:.2f} iom:{:.2f} center:{} drop", kTag, task_id,
-                     trackId, dir, iou, iom, center_dup ? 1 : 0);
+        // Only nearly identical boxes are the same crossing. Single-file
+        // people can nest/overlap heavily; the old IoM/center rule dropped
+        // the second person.
+        if (c.dir == dir && iou > 0.85f) {
+            LOG_INFO("{}[{}] duplicate trackId:{} dir:{} iou:{:.2f} drop", kTag, task_id, trackId, dir, iou);
+            return;
+        }
+        // Same track flipping direction at the same spot within 4s is line
+        // jitter, not a second pass.
+        if (c.dir != dir && c.track_id == trackId && iou > 0.30f) {
+            LOG_INFO("{}[{}] reverse-jitter trackId:{} dir:{} iou:{:.2f} drop", kTag, task_id, trackId, dir, iou);
             return;
         }
     }
     LOG_INFO("{}[{}] count trackId:{} dir:{} hist:{} conf:{:.2f} box:{}x{} {}x{}", kTag, task_id, trackId, dir,
              history.size(), last.confidence.confidence, last.box.x, last.box.y, last.box.width, last.box.height);
-    areaData.recent_counts.push_back({last.box, dir, now});
+    areaData.recent_counts.push_back({last.box, dir, now, trackId});
     td.last_count_tp = now;
     if (passCount > 0) {
         areaData.enter_org_num += 1;
@@ -335,7 +325,26 @@ void AreaAlarm::HandPassFlowOldHistory(bool bCalcPassflow) {
              itAreaTargets != pair.second.target_map.end();) {
             if (!itAreaTargets->second.detected) {
                 if (bCalcPassflow) {
-                    PassFlowCount(pair.second, itAreaTargets->second.history, pair.second.area_id);
+                    const auto& t = itAreaTargets->second.target;
+                    // Bottom-left corner has no line to cross: people walk out
+                    // under the camera. Count one leave when the track is lost
+                    // while still in that corner.
+                    const bool bottom_left = t.box.x < 480 && t.box.y + t.box.height > 979;
+                    if (bottom_left) {
+                        auto now = std::chrono::steady_clock::now();
+                        if (pair.second.bottom_left_last_tp.time_since_epoch().count() == 0 ||
+                            now - pair.second.bottom_left_last_tp >= std::chrono::seconds(30)) {
+                            LOG_INFO("{}[{}] bottom-left-exit trackId:{} conf:{:.2f} box:{}x{} {}x{}", kTag,
+                                     task_id, itAreaTargets->first, t.confidence.confidence, t.box.x,
+                                     t.box.y, t.box.width, t.box.height);
+                            pair.second.bottom_left_last_tp = now;
+                            pair.second.leave_org_num += 1;
+                            pair.second.recent_counts.push_back(
+                                {t.box, -1, now, static_cast<int>(itAreaTargets->first)});
+                        }
+                    } else {
+                        PassFlowCount(pair.second, itAreaTargets->second.history, pair.second.area_id);
+                    }
                 }
 
                 itAreaTargets = pair.second.target_map.erase(itAreaTargets);
