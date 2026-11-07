@@ -74,6 +74,7 @@ Status DefaultTracker::Update(const std::vector<TrackingBox>& bboxes, std::vecto
     for (unsigned int i = 0; i < trkNum; i++) {  // compute iou matrix as a distance matrix
         for (unsigned int j = 0; j < detNum; j++) {
             double iou_weight = 1 - GetDIOU(predictedBoxes.at(i), high_conf_boxes.at(j).box);
+            double iou        = GetIOU(predictedBoxes.at(i), high_conf_boxes.at(j).box);
 
             double dis_weight = Distance(predictedBoxes.at(i), high_conf_boxes.at(j).box);
 
@@ -84,7 +85,9 @@ Status DefaultTracker::Update(const std::vector<TrackingBox>& bboxes, std::vecto
 
             double weight = iou_weight * dis_weight;
             weight        = weight < 0 ? 0 : weight;
-            if (dis_weight > trackers.at(i).search_range || class_weight > 0)
+            // A wide search radius must not merge two side-by-side people;
+            // their boxes have little or no overlap.
+            if (iou < 0.10 || dis_weight > trackers.at(i).search_range || class_weight > 0)
                 weight = 999999;
 
             costMatrix.at(i).at(j)    = weight;
@@ -169,11 +172,15 @@ Status DefaultTracker::Update(const std::vector<TrackingBox>& bboxes, std::vecto
     for (unsigned int i = 0; i < utrkNum; i++) {  // compute iou matrix as a distance matrix
         for (unsigned int j = 0; j < lowDetNum; j++) {
             double iou_weight = 1 - GetDIOU(secondPredictedBoxes.at(i), low_conf_boxes.at(j).box);
+            double iou        = GetIOU(secondPredictedBoxes.at(i), low_conf_boxes.at(j).box);
 
             double dis_weight = Distance(secondPredictedBoxes.at(i), low_conf_boxes.at(j).box);
 
             double weight = iou_weight * dis_weight;
             weight        = weight < 0 ? 0 : weight;
+            // Low-confidence boxes are for occluded people; still require
+            // minimal overlap so a nearby false box cannot take over a track.
+            if (iou < 0.05) weight = 999999;
 
             costMatrix.at(i).at(j)    = weight;
             costDisMatrix.at(i).at(j) = dis_weight;

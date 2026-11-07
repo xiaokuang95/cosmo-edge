@@ -135,6 +135,25 @@ void AreaAlarm::PassFlowCount(PassFlowAreaTargets& areaData, const std::deque<Ai
             LOG_INFO("{}[{}] duplicate trackId:{} dir:{} iou:{:.2f} drop", kTag, task_id, trackId, dir, iou);
             return;
         }
+        // Two full-height boxes on almost the same spot within 4s are one
+        // person; a real second person changes height/width or does not overlap this much.
+        // shortcut: same-size overlap guard; if two real people overlap this
+        // much, replace it with a motion model instead of widening this rule.
+        if (c.dir == dir && iou > 0.45f) {
+            const float h1 = static_cast<float>(c.box.height);
+            const float h2 = static_cast<float>(last.box.height);
+            const float w1 = static_cast<float>(c.box.width);
+            const float w2 = static_cast<float>(last.box.width);
+            const float hmax = std::max(h1, h2);
+            const float hmin = std::max(1.0f, std::min(h1, h2));
+            const float wmax = std::max(w1, w2);
+            const float wmin = std::max(1.0f, std::min(w1, w2));
+            if (hmax / hmin < 1.10f && wmax / wmin < 1.25f) {
+                LOG_INFO("{}[{}] duplicate-same-size trackId:{} dir:{} iou:{:.2f} drop", kTag, task_id, trackId,
+                         dir, iou);
+                return;
+            }
+        }
         // Same track flipping direction at the same spot within 4s is line
         // jitter, not a second pass.
         if (c.dir != dir && c.track_id == trackId && iou > 0.30f) {
